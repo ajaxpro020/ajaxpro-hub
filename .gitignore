@@ -1,0 +1,11 @@
+# Local Netlify folder
+.netlify
+.vercel
+
+# macOS
+.DS_Store
+
+# Design references (not part of the deployed hub)
+aqwire-email-reference/
+aqwire-email-reference.zip
+aqwire-typ-source/
