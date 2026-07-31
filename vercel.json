@@ -6,6 +6,16 @@
       "maxDuration": 15
     }
   },
+  "rewrites": [
+    {
+      "source": "/club",
+      "destination": "/api/club"
+    },
+    {
+      "source": "/geen-toegang",
+      "destination": "/geen-toegang.html"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
