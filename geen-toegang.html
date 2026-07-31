@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#000000">
+    <title>Geen toegang | Ajax Pro</title>
+    <link rel="icon" href="/Favicon/favicon.ico" sizes="any">
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body class="gate-page">
+    <main class="gate-card" aria-labelledby="access-title">
+      <a class="gate-brand" href="/" aria-label="Ajax Pro home">
+        <img src="/assets/ajaxpro-logo.png" alt="Ajax Pro">
+      </a>
+      <p class="eyebrow">Clubtoegang</p>
+      <h1 id="access-title">Geen toegang</h1>
+      <p data-access-message>
+        Je Discord-account heeft geen rol die toegang geeft tot deze pagina.
+      </p>
+      <div class="gate-actions">
+        <a class="gate-button" href="/api/auth/discord-login">Opnieuw inloggen</a>
+        <a class="gate-link" href="/">Terug naar Ajax Pro</a>
+      </div>
+    </main>
+    <script>
+      (() => {
+        const messages = {
+          configuratie: "De Discord-login is nog niet correct geconfigureerd. Probeer het later opnieuw.",
+          geannuleerd: "De Discord-login is geannuleerd of niet goedgekeurd.",
+          "ongeldige-state": "De login kon niet veilig worden gecontroleerd. Start de login opnieuw.",
+          "geen-code": "Discord heeft geen geldige inlogcode teruggegeven.",
+          "geen-lid": "Je Discord-account is geen lid van de AjaxPro-server.",
+          "geen-rol": "Je Discord-account heeft geen rol die toegang geeft tot deze pagina.",
+          "discord-fout": "De Discord-login is mislukt. Probeer het over een moment opnieuw."
+        };
+        const reason = new URLSearchParams(window.location.search).get("reden");
+        const target = document.querySelector("[data-access-message]");
+        if (target && reason && messages[reason]) target.textContent = messages[reason];
+      })();
+    </script>
+  </body>
+</html>

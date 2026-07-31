@@ -201,6 +201,38 @@ a {
   object-fit: contain;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.header-login {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-button);
+  background: rgba(17, 25, 38, 0.82);
+  color: var(--text);
+  font-size: 0.83rem;
+  font-weight: 900;
+  white-space: nowrap;
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.header-login:hover,
+.header-login:focus-visible {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: var(--panel);
+  transform: translateY(-1px);
+}
+
 .header-cta,
 .card-action {
   display: inline-flex;
@@ -253,6 +285,108 @@ a {
 
 .intro {
   padding-block: 22px 12px;
+}
+
+.gate-page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+}
+
+.gate-card {
+  display: grid;
+  width: min(100%, 520px);
+  justify-items: start;
+  gap: 18px;
+  padding: clamp(24px, 6vw, 44px);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: var(--radius-lg);
+  background: rgba(10, 15, 25, 0.94);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.34);
+}
+
+.gate-brand img {
+  display: block;
+  width: auto;
+  height: 48px;
+}
+
+.gate-avatar {
+  width: 92px;
+  height: 92px;
+  border: 3px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.gate-card h1 {
+  margin: 0;
+  font-size: clamp(2rem, 9vw, 3.2rem);
+  line-height: 1;
+}
+
+.gate-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.gate-card form {
+  margin: 0;
+}
+
+.gate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.gate-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-button);
+  background: var(--red);
+  color: #fff;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.gate-button:hover,
+.gate-button:focus-visible {
+  background: var(--red-hover);
+}
+
+.gate-link {
+  color: var(--muted);
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+@media (max-width: 620px) {
+  .header-actions {
+    gap: 7px;
+  }
+
+  .header-login,
+  .header-cta {
+    min-height: 40px;
+    padding-inline: 10px;
+    font-size: 0.72rem;
+  }
+
+  .header-login {
+    max-width: 98px;
+    white-space: normal;
+    line-height: 1.05;
+    text-align: center;
+  }
 }
 
 .eyebrow,
