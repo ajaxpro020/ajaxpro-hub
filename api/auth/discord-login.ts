@@ -13,11 +13,23 @@ export async function GET(request: Request) {
   }
 
   try {
+    const requestOrigin = new URL(request.url).origin;
+    const redirectOrigin = getDiscordRedirectOrigin();
+    if (requestOrigin !== redirectOrigin) {
+      console.info("Discord OAuth state login", {
+        requestOrigin,
+        redirectOrigin,
+        stateCookieSet: false,
+        stateHash: null,
+      });
+      return redirect(`${redirectOrigin}/api/auth/discord-login`);
+    }
+
     const authorization = createDiscordAuthorization();
     const state = new URL(authorization.url).searchParams.get("state");
     console.info("Discord OAuth state login", {
-      requestOrigin: new URL(request.url).origin,
-      redirectOrigin: getDiscordRedirectOrigin(),
+      requestOrigin,
+      redirectOrigin,
       stateCookieSet: true,
       stateHash: await hashOAuthState(state),
     });
