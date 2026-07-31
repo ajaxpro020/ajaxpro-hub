@@ -1,4 +1,6 @@
-import { noStoreHeaders, readSession, redirect } from "../lib/discord-auth";
+import { noStoreHeaders, redirect } from "../lib/discord-auth";
+import { permissions } from "../lib/permissions.config";
+import { getSessionWithPermission } from "../lib/server-permissions";
 
 const escapeHtml = (value: string) =>
   value.replace(
@@ -14,7 +16,10 @@ const escapeHtml = (value: string) =>
   );
 
 export async function GET(request: Request) {
-  const session = await readSession(request);
+  const session = await getSessionWithPermission(
+    request,
+    permissions.portalAccess,
+  );
   if (!session) return redirect("/api/auth/discord-login");
 
   const username = escapeHtml(session.username);

@@ -1,3 +1,8 @@
+import {
+  permissions,
+  rolesHavePermission,
+} from "./permissions.config";
+
 const DISCORD_API_BASE = "https://discord.com/api/v10";
 const OAUTH_STATE_COOKIE = "ajaxpro_oauth_state";
 const SESSION_COOKIE = "ajaxpro_session";
@@ -20,6 +25,7 @@ export type Session = {
   userId: string;
   username: string;
   avatarUrl: string;
+  discordRoleIds: string[];
   issuedAt: number;
   expiresAt: number;
 };
@@ -220,16 +226,7 @@ export const getDiscordGuildMember = (accessToken: string) =>
   );
 
 export const hasAllowedRole = (member: DiscordGuildMember) => {
-  const allowedRoles = requiredEnv("DISCORD_ALLOWED_ROLE_IDS")
-    .split(",")
-    .map((role) => role.trim())
-    .filter(Boolean);
-
-  if (allowedRoles.length === 0) {
-    throw new Error("DISCORD_ALLOWED_ROLE_IDS bevat geen geldige rol-ID's.");
-  }
-
-  return (member.roles ?? []).some((role) => allowedRoles.includes(role));
+  return rolesHavePermission(member.roles ?? [], permissions.portalAccess);
 };
 
 const avatarUrl = (user: DiscordUser) => {
@@ -245,12 +242,18 @@ const avatarUrl = (user: DiscordUser) => {
   return `https://cdn.discordapp.com/embed/avatars/${fallbackIndex}.png`;
 };
 
-export const createSessionCookie = async (user: DiscordUser) => {
+export const createSessionCookie = async (
+  user: DiscordUser,
+  member: DiscordGuildMember,
+) => {
   const issuedAt = Math.floor(Date.now() / 1000);
   const payload: Session = {
     userId: user.id,
     username: user.global_name || user.username,
     avatarUrl: avatarUrl(user),
+    discordRoleIds: (member.roles ?? []).filter(
+      (roleId): roleId is string => typeof roleId === "string" && Boolean(roleId),
+    ),
     issuedAt,
     expiresAt: issuedAt + SESSION_MAX_AGE_SECONDS,
   };
@@ -279,6 +282,10 @@ export const readSession = async (request: Request): Promise<Session | null> => 
       !session.userId ||
       !session.username ||
       !session.avatarUrl ||
+      !Array.isArray(session.discordRoleIds) ||
+      !session.discordRoleIds.every(
+        (roleId) => typeof roleId === "string" && Boolean(roleId),
+      ) ||
       !Number.isFinite(session.expiresAt) ||
       session.expiresAt <= now
     ) {
