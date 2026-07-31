@@ -85,6 +85,18 @@ const safeEqual = (left: string, right: string) => {
   return difference === 0;
 };
 
+export const hashOAuthState = async (state: string | null) => {
+  if (!state) return null;
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(state),
+  );
+  return [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, 8);
+};
+
 const parseCookies = (request: Request) => {
   const cookies = new Map<string, string>();
   for (const part of (request.headers.get("cookie") ?? "").split(";")) {
@@ -160,6 +172,23 @@ export const consumeAndValidateState = (request: Request, state: string | null) 
   const expectedState = parseCookies(request).get(OAUTH_STATE_COOKIE);
   return Boolean(state && expectedState && safeEqual(state, expectedState));
 };
+
+export const getOAuthStateDebug = async (
+  request: Request,
+  state: string | null,
+) => {
+  const expectedState = parseCookies(request).get(OAUTH_STATE_COOKIE) ?? null;
+  return {
+    cookiePresent: Boolean(expectedState),
+    queryPresent: Boolean(state),
+    matches: Boolean(state && expectedState && safeEqual(state, expectedState)),
+    cookieHash: await hashOAuthState(expectedState),
+    queryHash: await hashOAuthState(state),
+  };
+};
+
+export const getDiscordRedirectOrigin = () =>
+  new URL(requiredEnv("DISCORD_REDIRECT_URI")).origin;
 
 export const clearStateCookie = () => cookie(OAUTH_STATE_COOKIE, "", 0);
 export const clearSessionCookie = () => cookie(SESSION_COOKIE, "", 0);

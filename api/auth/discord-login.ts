@@ -1,6 +1,8 @@
 import {
   clearSessionCookie,
   createDiscordAuthorization,
+  getDiscordRedirectOrigin,
+  hashOAuthState,
   noStoreHeaders,
   redirect,
 } from "../../lib/discord-auth";
@@ -12,6 +14,13 @@ export async function GET(request: Request) {
 
   try {
     const authorization = createDiscordAuthorization();
+    const state = new URL(authorization.url).searchParams.get("state");
+    console.info("Discord OAuth state login", {
+      requestOrigin: new URL(request.url).origin,
+      redirectOrigin: getDiscordRedirectOrigin(),
+      stateCookieSet: true,
+      stateHash: await hashOAuthState(state),
+    });
     return redirect(authorization.url, {
       "Set-Cookie": [authorization.stateCookie, clearSessionCookie()],
     });
