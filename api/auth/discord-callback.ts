@@ -3,9 +3,7 @@ import {
   consumeAndValidateState,
   createSessionCookie,
   exchangeDiscordCode,
-  getDiscordRedirectOrigin,
   getDiscordGuildMember,
-  getOAuthStateDebug,
   getDiscordUser,
   hasAllowedRole,
   redirect,
@@ -19,16 +17,6 @@ const fail = (reason: string) =>
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const state = url.searchParams.get("state");
-  const stateDebug = await getOAuthStateDebug(request, state);
-  console.info("Discord OAuth state callback", {
-    requestOrigin: url.origin,
-    redirectOrigin: getDiscordRedirectOrigin(),
-    stateCookiePresent: stateDebug.cookiePresent,
-    stateQueryPresent: stateDebug.queryPresent,
-    stateMatches: stateDebug.matches,
-    stateCookieHash: stateDebug.cookieHash,
-    stateQueryHash: stateDebug.queryHash,
-  });
 
   if (url.searchParams.get("error")) return fail("geannuleerd");
   if (!consumeAndValidateState(request, state)) {
