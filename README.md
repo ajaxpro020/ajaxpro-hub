@@ -10,12 +10,14 @@ De productieversie wordt automatisch vanuit `main` naar Vercel gedeployed.
 - Productie: https://ajaxpro-hub.vercel.app
 - Domein: https://ajaxpro.fans
 
-## Discord role gate
+## Discord-toegang en rechten
 
 De knop **Inloggen met Discord** gebruikt Discord OAuth2 met uitsluitend de scopes
 `identify` en `guilds.members.read`. De route `/club` is server-side afgeschermd en
-controleert bij het inloggen of de gebruiker lid is van de ingestelde Discord-server
-en minimaal één toegestane rol-ID heeft.
+ieder geldig lid van de AjaxPro Discord-server krijgt standaard `portal.access`.
+`DISCORD_GUILD_ID` bepaalt welke Discord-server wordt gecontroleerd. Discord-rol-ID's
+worden later centraal gekoppeld aan aanvullende rechten; onbekende rollen krijgen
+geen aanvullende rechten.
 
 Benodigde environment variables:
 
@@ -24,7 +26,6 @@ DISCORD_CLIENT_ID=
 DISCORD_CLIENT_SECRET=
 DISCORD_REDIRECT_URI=
 DISCORD_GUILD_ID=
-DISCORD_ALLOWED_ROLE_IDS=rol_id_1,rol_id_2
 SESSION_SECRET=
 ```
 

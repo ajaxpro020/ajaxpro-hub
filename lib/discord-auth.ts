@@ -13,13 +13,14 @@ type DiscordUser = {
 };
 
 type DiscordGuildMember = {
-  roles?: string[];
+  roles: string[];
 };
 
 export type Session = {
   userId: string;
   username: string;
   avatarUrl: string;
+  discordRoleIds: string[];
   issuedAt: number;
   expiresAt: number;
 };
@@ -219,19 +220,6 @@ export const getDiscordGuildMember = (accessToken: string) =>
     accessToken,
   );
 
-export const hasAllowedRole = (member: DiscordGuildMember) => {
-  const allowedRoles = requiredEnv("DISCORD_ALLOWED_ROLE_IDS")
-    .split(",")
-    .map((role) => role.trim())
-    .filter(Boolean);
-
-  if (allowedRoles.length === 0) {
-    throw new Error("DISCORD_ALLOWED_ROLE_IDS bevat geen geldige rol-ID's.");
-  }
-
-  return (member.roles ?? []).some((role) => allowedRoles.includes(role));
-};
-
 const avatarUrl = (user: DiscordUser) => {
   if (user.avatar) {
     const extension = user.avatar.startsWith("a_") ? "gif" : "png";
@@ -245,12 +233,26 @@ const avatarUrl = (user: DiscordUser) => {
   return `https://cdn.discordapp.com/embed/avatars/${fallbackIndex}.png`;
 };
 
-export const createSessionCookie = async (user: DiscordUser) => {
+export const createSessionCookie = async (
+  user: DiscordUser,
+  member: DiscordGuildMember,
+) => {
+  if (
+    !member ||
+    !Array.isArray(member.roles) ||
+    !member.roles.every(
+      (roleId) => typeof roleId === "string" && Boolean(roleId),
+    )
+  ) {
+    throw new Error("Discord gaf geen geldig guild member-object terug.");
+  }
+
   const issuedAt = Math.floor(Date.now() / 1000);
   const payload: Session = {
     userId: user.id,
     username: user.global_name || user.username,
     avatarUrl: avatarUrl(user),
+    discordRoleIds: member.roles,
     issuedAt,
     expiresAt: issuedAt + SESSION_MAX_AGE_SECONDS,
   };
@@ -279,6 +281,10 @@ export const readSession = async (request: Request): Promise<Session | null> => 
       !session.userId ||
       !session.username ||
       !session.avatarUrl ||
+      !Array.isArray(session.discordRoleIds) ||
+      !session.discordRoleIds.every(
+        (roleId) => typeof roleId === "string" && Boolean(roleId),
+      ) ||
       !Number.isFinite(session.expiresAt) ||
       session.expiresAt <= now
     ) {
