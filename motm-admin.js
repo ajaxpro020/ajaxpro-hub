@@ -4,7 +4,7 @@ const setDefaultSchedule=()=>{if(!matchFields.kickoffAt?.value)return;const kick
 matchFields.kickoffAt?.addEventListener('change',setDefaultSchedule);
 if(matchFields.opponent)fetch('/api/next-match').then(r=>r.ok?r.json():Promise.reject()).then(({match})=>{if(!match)return;matchFields.opponent.value=match.opponent||'';matchFields.competition.value=match.competition||'';matchFields.kickoffAt.value=amsterdamInput(match.kickoff);matchFields.homeOrAway.value=match.isHome?'home':'away';setDefaultSchedule()}).catch(()=>{});
 document.querySelector('[data-copy]')?.addEventListener('click',async()=>{await navigator.clipboard.writeText(document.querySelector('#share-url').value);document.querySelector('[data-copy]').textContent='Gekopieerd'});
-document.querySelector('[data-share]')?.addEventListener('click',()=>{const url=document.querySelector('#share-url').value;if(navigator.share)navigator.share({title:'AjaxPro Man of the Match',url});else navigator.clipboard.writeText(url)});
+document.querySelector('[data-share]')?.addEventListener('click',()=>{const field=document.querySelector('#share-url'),url=field.value,title=field.dataset.shareTitle,text=field.dataset.shareText;if(navigator.share)navigator.share({title,text,url});else navigator.clipboard.writeText(url)});
 const playerInputs=[...document.querySelectorAll('.admin-player input')],playerCount=document.querySelector('[data-player-count]');
 const updatePlayerCount=()=>{if(playerCount)playerCount.textContent=String(playerInputs.filter(input=>input.checked).length)};
 playerInputs.forEach(input=>input.addEventListener('change',updatePlayerCount));

@@ -2,6 +2,7 @@ export const permissions = {
   portalAccess: "portal.access",
   toolsLineup: "tools.lineup",
   toolsTactics: "tools.tactics",
+  toolsScreenshot: "tools.screenshot",
   adminManage: "admin.manage",
   motmManage: "motm.manage",
 } as const;
@@ -17,12 +18,18 @@ export const discordRolePermissions: ReadonlyMap<
   readonly Permission[]
 > = new Map();
 
+const idsFromEnv = (name: string) => new Set((process.env[name] ?? "").split(",").map(id => id.trim()).filter(Boolean));
+
 export const rolesHavePermission = (
   roleIds: readonly string[],
   permission: Permission,
 ) => {
   if (permission === permissions.motmManage) {
-    const allowed = new Set((process.env.MOTM_MANAGER_ROLE_IDS ?? "").split(",").map(id => id.trim()).filter(Boolean));
+    const allowed = idsFromEnv("MOTM_MANAGER_ROLE_IDS");
+    return roleIds.some(roleId => allowed.has(roleId));
+  }
+  if (permission === permissions.toolsTactics || permission === permissions.toolsScreenshot) {
+    const allowed = idsFromEnv("PORTAL_TEAM_TOOL_ROLE_IDS");
     return roleIds.some(roleId => allowed.has(roleId));
   }
   return roleIds.some((roleId) => discordRolePermissions.get(roleId)?.includes(permission));
