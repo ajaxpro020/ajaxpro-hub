@@ -14,6 +14,7 @@
     { "source": "/club/motm", "destination": "/api/motm/index" },
     { "source": "/club/tools", "destination": "/api/club-tools" },
     { "source": "/club/stemmen/:slug", "destination": "/api/motm/vote?slug=:slug" },
+    { "source": "/stem/:slug", "destination": "/api/motm/share?slug=:slug" },
     { "source": "/club/motm/beheer", "destination": "/api/motm/manage?view=list" },
     { "source": "/club/motm/nieuw", "destination": "/api/motm/manage?view=new" },
     { "source": "/club/motm/beheer/:id", "destination": "/api/motm/manage?view=detail&id=:id" },
