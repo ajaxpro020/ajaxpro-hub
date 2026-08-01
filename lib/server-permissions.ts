@@ -11,9 +11,14 @@ export const getSessionWithPermission = async (
 ): Promise<Session | null> => {
   const session = await readSession(request);
   if (!session) return null;
-  const hasPermission =
-    defaultMemberPermissions.includes(permission) ||
-    rolesHavePermission(session.discordRoleIds, permission);
+  const hasPermission = sessionHasPermission(session, permission);
   if (!hasPermission) return null;
   return session;
 };
+
+export const sessionHasPermission = (
+  session: Session,
+  permission: Permission,
+) =>
+  defaultMemberPermissions.includes(permission) ||
+  rolesHavePermission(session.discordRoleIds, permission);
