@@ -3,6 +3,8 @@ import { permissions } from "../../lib/permissions.config";
 import { getSessionWithPermission } from "../../lib/server-permissions";
 import { db, resultsFor } from "../../lib/motm-db";
 import { esc, errorPage, matchHeading, page } from "../../lib/motm-view";
+import { synchronizeMatch } from "../../lib/motm-scheduling";
+import { canVoteAt, voteLabel, winnerLabel } from "../../lib/motm-rules";
 
 const slugOf = (request: Request) => new URL(request.url).searchParams.get("slug")?.trim() ?? "";
 export async function GET(request: Request) {
@@ -10,15 +12,18 @@ export async function GET(request: Request) {
   const session = await getSessionWithPermission(request, permissions.portalAccess);
   if (!session) return redirect(`/api/auth/discord-login?returnTo=${encodeURIComponent(`/club/stemmen/${slug}`)}`);
   try {
-    const [match] = await db()`SELECT * FROM motm_matches WHERE slug=${slug}`;
+    let [match] = await db()`SELECT * FROM motm_matches WHERE slug=${slug}`;
     if (!match) return errorPage("Stemming niet gevonden", "Controleer de gedeelde link.", 404);
+    match = await synchronizeMatch(match as any);
     const players = await db()`SELECT * FROM motm_match_players WHERE match_id=${match.id} ORDER BY shirt_number_snapshot NULLS LAST,name_snapshot`;
     const [ownVote] = await db()`SELECT v.player_id,p.name_snapshot FROM motm_votes v JOIN motm_match_players p ON p.match_id=v.match_id AND p.player_id=v.player_id WHERE v.match_id=${match.id} AND v.voter_discord_user_id=${session.userId}`;
     if (match.status === "draft") return errorPage("Nog niet geopend", "Deze stemming staat nog in concept.", 403);
     if (match.status === "closed") {
       const results = await resultsFor(match.id);
-      const podium = results.slice(0,3).map((row:any,index) => `<li><span>${index+1}</span><img src="${esc(row.image_url_snapshot)}" alt=""><strong>${esc(row.name_snapshot)}</strong><b>${row.votes} · ${row.percentage}%</b></li>`).join("");
-      return page("Uitslag", `<main class="motm-main"><section class="match-head status-closed"><span class="status">Gesloten</span>${matchHeading(match)}</section><section class="result"><p class="eyebrow">De winnaar</p><img class="winner-photo" src="${esc(results[0]?.image_url_snapshot)}" alt=""><h2>${esc(results[0]?.name_snapshot ?? "Geen stemmen")}</h2><p>${results[0]?.votes ?? 0} stemmen · ${results[0]?.percentage ?? 0}%</p><ol class="podium">${podium}</ol><div class="own-vote">${ownVote ? `Jouw stem: <strong>${esc(ownVote.name_snapshot)}</strong>` : "Je hebt niet gestemd."}</div></section></main>`);
+      const winners = results.filter(row => row.rank === 1);
+      const podium = results.map(row => `<li><span>${row.rank}</span><img src="${esc(row.image_url_snapshot)}" alt=""><strong>${esc(row.name_snapshot)}</strong><b>${voteLabel(row.votes)} · ${row.percentage}%</b></li>`).join("");
+      const winnerNames = winners.map(row => esc(row.name_snapshot)).join(" & ");
+      return page("Uitslag", `<main class="motm-main"><section class="match-head status-closed"><span class="status">Gesloten</span>${matchHeading(match)}</section><section class="result"><p class="eyebrow">${winners.length > 1 ? "Gedeelde winnaars" : "De winnaar"}</p>${winners.length === 1 ? `<img class="winner-photo" src="${esc(winners[0].image_url_snapshot)}" alt="">`:""}<h2>${winnerNames || "Geen stemmen"}</h2>${winners.length ? `<p>${winnerLabel(winners.length)} · ${voteLabel(winners[0].votes)} · ${winners[0].percentage}%</p>`:""}<ol class="podium">${podium}</ol><div class="own-vote">${ownVote ? `Jouw stem: <strong>${esc(ownVote.name_snapshot)}</strong>` : "Je hebt niet gestemd."}</div></section></main>`);
     }
     const cards = players.map((p:any) => `<label class="player-card"><input type="radio" name="playerId" value="${esc(p.player_id)}" ${ownVote?.player_id===p.player_id?"checked":""} required><span class="player-select"><img src="${esc(p.image_url_snapshot)}" alt=""><span><strong>${esc(p.name_snapshot)}</strong><small>${esc(p.position_snapshot)}${p.shirt_number_snapshot ? ` · #${p.shirt_number_snapshot}`:""}</small></span><i aria-hidden="true">✓</i></span></label>`).join("");
     return page("Stem op jouw MOTM", `<main class="motm-main vote-page"><section class="match-head"><span class="status status-open">Open</span>${matchHeading(match)}</section><form method="post"><section><h2>Wie was jouw Man of the Match?</h2><p class="sub">Kies één speler. Je kunt je stem wijzigen zolang de stemming openstaat.</p><div class="player-grid">${cards}</div></section><div class="sticky-action">${ownVote ? `<p>Jouw huidige stem: <strong>${esc(ownVote.name_snapshot)}</strong></p>`:""}<button class="button" type="submit" onclick="return confirm('Weet je zeker dat je op deze speler wilt stemmen?')">${ownVote ? "Stem wijzigen" : "Stem bevestigen"}</button></div></form></main>`);
@@ -31,9 +36,11 @@ export async function POST(request: Request) {
   if (!session) return redirect(`/api/auth/discord-login?returnTo=${encodeURIComponent(`/club/stemmen/${slugOf(request)}`)}`);
   const slug = slugOf(request); const form = await request.formData(); const playerId = String(form.get("playerId") ?? "");
   try {
-    const [match] = await db()`SELECT id,status FROM motm_matches WHERE slug=${slug}`;
+    let [match] = await db()`SELECT * FROM motm_matches WHERE slug=${slug}`;
     if (!match) return errorPage("Stemming niet gevonden", "Controleer de link.", 404);
-    if (match.status !== "open") return errorPage("Stemmen niet mogelijk", "Deze stemming is niet open.", 409);
+    const now = new Date();
+    match = await synchronizeMatch(match as any, now);
+    if (!canVoteAt(match as any, now)) return errorPage("Stemmen niet mogelijk", "Deze stemming is niet open of de sluitingstijd is bereikt.", 409);
     const [selected] = await db()`SELECT 1 FROM motm_match_players WHERE match_id=${match.id} AND player_id=${playerId}`;
     if (!selected) return errorPage("Ongeldige speler", "Deze speler hoort niet bij deze wedstrijd.", 400);
     await db()`INSERT INTO motm_votes(match_id,voter_discord_user_id,player_id) VALUES(${match.id},${session.userId},${playerId}) ON CONFLICT(match_id,voter_discord_user_id) DO UPDATE SET player_id=excluded.player_id,updated_at=now()`;
