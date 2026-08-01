@@ -11,6 +11,8 @@
       "source": "/club",
       "destination": "/api/club"
     },
+    { "source": "/club/motm", "destination": "/api/motm/index" },
+    { "source": "/club/tools", "destination": "/api/club-tools" },
     { "source": "/club/stemmen/:slug", "destination": "/api/motm/vote?slug=:slug" },
     { "source": "/club/motm/beheer", "destination": "/api/motm/manage?view=list" },
     { "source": "/club/motm/nieuw", "destination": "/api/motm/manage?view=new" },
