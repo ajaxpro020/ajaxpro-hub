@@ -1,5 +1,6 @@
 const DISCORD_API_BASE = "https://discord.com/api/v10";
 const OAUTH_STATE_COOKIE = "ajaxpro_oauth_state";
+const OAUTH_RETURN_COOKIE = "ajaxpro_oauth_return";
 const SESSION_COOKIE = "ajaxpro_session";
 const STATE_MAX_AGE_SECONDS = 10 * 60;
 const SESSION_MAX_AGE_SECONDS = 8 * 60 * 60;
@@ -156,6 +157,16 @@ export const createDiscordAuthorization = () => {
     stateCookie: cookie(OAUTH_STATE_COOKIE, state, STATE_MAX_AGE_SECONDS),
   };
 };
+
+export const safeClubReturnTo = (value: string | null | undefined) =>
+  value && value.startsWith("/club/") && !value.startsWith("//") && !value.includes("\\") ? value : "/club";
+export const createReturnToCookie = (value: string | null) => cookie(OAUTH_RETURN_COOKIE, encode(safeClubReturnTo(value)), STATE_MAX_AGE_SECONDS);
+export const readReturnTo = (request: Request) => {
+  const value = parseCookies(request).get(OAUTH_RETURN_COOKIE);
+  if (!value) return "/club";
+  try { return safeClubReturnTo(decode(value)); } catch { return "/club"; }
+};
+export const clearReturnToCookie = () => cookie(OAUTH_RETURN_COOKIE, "", 0);
 
 export const consumeAndValidateState = (request: Request, state: string | null) => {
   const expectedState = parseCookies(request).get(OAUTH_STATE_COOKIE);

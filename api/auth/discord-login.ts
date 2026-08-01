@@ -1,5 +1,6 @@
 import {
   clearSessionCookie,
+  createReturnToCookie,
   createDiscordAuthorization,
   getDiscordRedirectOrigin,
   noStoreHeaders,
@@ -15,12 +16,13 @@ export async function GET(request: Request) {
     const requestOrigin = new URL(request.url).origin;
     const redirectOrigin = getDiscordRedirectOrigin();
     if (requestOrigin !== redirectOrigin) {
-      return redirect(`${redirectOrigin}/api/auth/discord-login`);
+      const localUrl = new URL(request.url);
+      return redirect(`${redirectOrigin}/api/auth/discord-login?returnTo=${encodeURIComponent(localUrl.searchParams.get("returnTo") ?? "")}`);
     }
 
     const authorization = createDiscordAuthorization();
     return redirect(authorization.url, {
-      "Set-Cookie": [authorization.stateCookie, clearSessionCookie()],
+      "Set-Cookie": [authorization.stateCookie, createReturnToCookie(new URL(request.url).searchParams.get("returnTo")), clearSessionCookie()],
     });
   } catch (error) {
     console.error("Discord login could not be started", error);

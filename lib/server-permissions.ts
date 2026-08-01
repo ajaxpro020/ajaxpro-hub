@@ -17,3 +17,6 @@ export const getSessionWithPermission = async (
   if (!hasPermission) return null;
   return session;
 };
+
+export const sessionHasPermission = (session: Session, permission: Permission) =>
+  defaultMemberPermissions.includes(permission) || rolesHavePermission(session.discordRoleIds, permission);

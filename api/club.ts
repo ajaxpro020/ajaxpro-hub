@@ -1,63 +1,19 @@
 import { noStoreHeaders, redirect } from "../lib/discord-auth";
 import { permissions } from "../lib/permissions.config";
-import { getSessionWithPermission } from "../lib/server-permissions";
-
-const escapeHtml = (value: string) =>
-  value.replace(
-    /[&<>"']/g,
-    (character) =>
-      ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;",
-      })[character]!,
-  );
+import { getSessionWithPermission, sessionHasPermission } from "../lib/server-permissions";
+import { db, resultsFor } from "../lib/motm-db";
+import { esc, formatKickoff } from "../lib/motm-view";
+import { synchronizeAllMatches } from "../lib/motm-scheduling";
 
 export async function GET(request: Request) {
-  const session = await getSessionWithPermission(
-    request,
-    permissions.portalAccess,
-  );
-  if (!session) return redirect("/api/auth/discord-login");
-
-  const username = escapeHtml(session.username);
-  const avatarUrl = escapeHtml(session.avatarUrl);
-  const html = `<!doctype html>
-<html lang="nl">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="robots" content="noindex, nofollow">
-    <meta name="theme-color" content="#000000">
-    <title>AjaxPro Club</title>
-    <link rel="icon" href="/Favicon/favicon.ico" sizes="any">
-    <link rel="stylesheet" href="/styles.css">
-  </head>
-  <body class="gate-page">
-    <main class="gate-card" aria-labelledby="club-title">
-      <a class="gate-brand" href="/" aria-label="Ajax Pro home">
-        <img src="/assets/ajaxpro-logo.png" alt="Ajax Pro">
-      </a>
-      <img class="gate-avatar" src="${avatarUrl}" alt="Profielfoto van ${username}">
-      <p class="eyebrow">Discord-toegang actief</p>
-      <h1 id="club-title">Welkom, ${username}</h1>
-      <p>Je bent lid van de AjaxPro Discord-server en hebt een toegestane rol. De toegang werkt.</p>
-      <form action="/api/auth/logout" method="post">
-        <button class="gate-button" type="submit">Uitloggen</button>
-      </form>
-    </main>
-  </body>
-</html>`;
-
-  return new Response(html, {
-    status: 200,
-    headers: {
-      ...noStoreHeaders,
-      "Content-Type": "text/html; charset=UTF-8",
-      "Content-Security-Policy":
-        "default-src 'none'; style-src 'self'; img-src 'self' https://cdn.discordapp.com; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
-    },
-  });
+  const session=await getSessionWithPermission(request,permissions.portalAccess); if(!session)return redirect("/api/auth/discord-login");
+  let spotlight=`<section class="club-spotlight unavailable"><p class="eyebrow">Man of the Match</p><h1>Nog geen stemming</h1><p>Zodra een stemming openstaat, vind je hem hier.</p></section>`;
+  try {
+    await synchronizeAllMatches();
+    const [open]=await db()`SELECT * FROM motm_matches WHERE status='open' ORDER BY opened_at DESC LIMIT 1`;
+    if(open){const [vote]=await db()`SELECT p.name_snapshot FROM motm_votes v JOIN motm_match_players p ON p.match_id=v.match_id AND p.player_id=v.player_id WHERE v.match_id=${open.id} AND v.voter_discord_user_id=${session.userId}`;spotlight=`<section class="club-spotlight"><span class="status status-open">Stemming open</span><p class="eyebrow">Man of the Match</p><h1>Ajax — ${esc(open.opponent)}</h1><p>${esc(formatKickoff(open.kickoff_at))} · ${esc(open.competition)}</p>${vote?`<p class="own">Jouw stem: <strong>${esc(vote.name_snapshot)}</strong></p>`:""}<a class="button" href="/club/stemmen/${esc(open.slug)}">${vote?"Stem bekijken of wijzigen":"Stem nu"}</a></section>`}
+    else {const [last]=await db()`SELECT * FROM motm_matches WHERE status='closed' ORDER BY closed_at DESC LIMIT 1`;if(last){const results=await resultsFor(last.id);const winners=results.filter(row=>row.rank===1);spotlight=`<section class="club-spotlight"><span class="status">Laatste uitslag</span><p class="eyebrow">Man of the Match</p><h1>${winners.length?esc(winners.map(row=>row.name_snapshot).join(" & ")):"Geen stemmen"}</h1><p>Ajax — ${esc(last.opponent)}${winners.length?` · ${winners[0].percentage}% van de stemmen`:""}</p><a class="button secondary" href="/club/stemmen/${esc(last.slug)}">Bekijk uitslag</a></section>`}}
+  }catch(error){console.error("Club MOTM spotlight failed",error);spotlight=`<section class="club-spotlight unavailable"><p class="eyebrow">Man of the Match</p><h1>Tijdelijk niet beschikbaar</h1><p>Probeer het later opnieuw.</p></section>`}
+  const canManage=sessionHasPermission(session,permissions.motmManage);
+  return new Response(`<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Club | AjaxPro</title><link rel="stylesheet" href="/motm.css"></head><body><header class="motm-header club-nav"><a href="/"><img src="/assets/ajaxpro-logo.png" alt="AjaxPro"><span>Club</span></a><div><img class="avatar" src="${esc(session.avatarUrl)}" alt=""><form action="/api/auth/logout" method="post"><button>Uitloggen</button></form></div></header><main class="motm-main club-main">${spotlight}<section class="club-tools"><div class="title-row"><div><p class="eyebrow">AjaxPro Club</p><h2>Jouw tools</h2></div>${canManage?`<a class="text-link" href="/club/motm/beheer">MOTM beheren →</a>`:""}</div><a class="tool" href="https://opstelling.ajaxpro.fans"><strong>Opstellingmaker</strong><span>Maak en deel jouw Ajax-opstelling.</span><b>Open ↗</b></a><a class="tool" href="/contracten.html"><strong>Contractenoverzicht</strong><span>Bekijk de actuele selectie en contractduur.</span><b>Open →</b></a></section></main></body></html>`,{headers:{...noStoreHeaders,"Content-Type":"text/html; charset=UTF-8","Content-Security-Policy":"default-src 'none'; style-src 'self'; img-src 'self' https://cdn.discordapp.com; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"}});
 }
