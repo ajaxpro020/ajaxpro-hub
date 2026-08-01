@@ -1,11 +1,13 @@
 import {
   clearStateCookie,
+  clearReturnToCookie,
   consumeAndValidateState,
   createSessionCookie,
   exchangeDiscordCode,
   getDiscordGuildMember,
   getDiscordUser,
   redirect,
+  readReturnTo,
 } from "../../lib/discord-auth";
 
 const fail = (reason: string) =>
@@ -32,8 +34,8 @@ export async function GET(request: Request) {
       getDiscordGuildMember(accessToken),
     ]);
 
-    return redirect("/club", {
-      "Set-Cookie": [clearStateCookie(), await createSessionCookie(user, member)],
+    return redirect(readReturnTo(request), {
+      "Set-Cookie": [clearStateCookie(), clearReturnToCookie(), await createSessionCookie(user, member)],
     });
   } catch (error) {
     const status = (error as { status?: number }).status;
