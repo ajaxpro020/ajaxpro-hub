@@ -53,15 +53,30 @@ Vercel Preview-URI alleen bij Preview.
 
 ## Man of the Match – fase 1
 
-Installeer dependencies met `npm install`. Maak daarna de tabellen eenmalig aan:
+Installeer dependencies met `npm install`. Voer op een nieuwe database eerst
+migratie 001 en daarna migratie 002 uit:
 
 ```sh
-npm run db:migrate
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/001_motm.sql
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/002_motm_scheduling.sql
 ```
 
-De migratie in `db/migrations/001_motm.sql` is additief, gebruikt `IF NOT EXISTS`
-en verwijdert geen data. PostgreSQL moet `gen_random_uuid()` ondersteunen (dit is
+Beide migraties zijn additief en verwijderen geen data. Migratie 001 maakt de
+MOTM-tabellen en unieke beperkingen aan. Migratie 002 voegt de geplande openings-
+en sluitingstijden toe. PostgreSQL moet `gen_random_uuid()` ondersteunen (dit is
 standaard in moderne managed Postgres-installaties).
+
+### Production-checklist
+
+1. Maak of koppel een afzonderlijke Production PostgreSQL-database en stel de
+   Production-waarde van `DATABASE_URL` in Vercel in.
+2. Voer op die Production-database migratie 001 en daarna migratie 002 uit.
+3. Stel in Vercel voor Production `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`,
+   `DISCORD_GUILD_ID`, `SESSION_SECRET` en `MOTM_MANAGER_ROLE_IDS` in.
+4. Stel `DISCORD_REDIRECT_URI=https://ajaxpro.fans/api/auth/discord-callback` alleen
+   voor Production in en voeg exact die URI toe in het Discord Developer Portal.
+5. Merge pas daarna naar `main`, wacht op een geslaagde Production-deployment en
+   test login, beheer, stemmen, automatisch sluiten en de uitslag op het domein.
 
 Lokaal testen:
 
