@@ -1,8 +1,3 @@
-import {
-  permissions,
-  rolesHavePermission,
-} from "./permissions.config";
-
 const DISCORD_API_BASE = "https://discord.com/api/v10";
 const OAUTH_STATE_COOKIE = "ajaxpro_oauth_state";
 const SESSION_COOKIE = "ajaxpro_session";
@@ -18,7 +13,7 @@ type DiscordUser = {
 };
 
 type DiscordGuildMember = {
-  roles?: string[];
+  roles: string[];
 };
 
 export type Session = {
@@ -225,10 +220,6 @@ export const getDiscordGuildMember = (accessToken: string) =>
     accessToken,
   );
 
-export const hasAllowedRole = (member: DiscordGuildMember) => {
-  return rolesHavePermission(member.roles ?? [], permissions.portalAccess);
-};
-
 const avatarUrl = (user: DiscordUser) => {
   if (user.avatar) {
     const extension = user.avatar.startsWith("a_") ? "gif" : "png";
@@ -246,14 +237,22 @@ export const createSessionCookie = async (
   user: DiscordUser,
   member: DiscordGuildMember,
 ) => {
+  if (
+    !member ||
+    !Array.isArray(member.roles) ||
+    !member.roles.every(
+      (roleId) => typeof roleId === "string" && Boolean(roleId),
+    )
+  ) {
+    throw new Error("Discord gaf geen geldig guild member-object terug.");
+  }
+
   const issuedAt = Math.floor(Date.now() / 1000);
   const payload: Session = {
     userId: user.id,
     username: user.global_name || user.username,
     avatarUrl: avatarUrl(user),
-    discordRoleIds: (member.roles ?? []).filter(
-      (roleId): roleId is string => typeof roleId === "string" && Boolean(roleId),
-    ),
+    discordRoleIds: member.roles,
     issuedAt,
     expiresAt: issuedAt + SESSION_MAX_AGE_SECONDS,
   };

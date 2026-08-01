@@ -1,5 +1,6 @@
 import { readSession, type Session } from "./discord-auth";
 import {
+  defaultMemberPermissions,
   type Permission,
   rolesHavePermission,
 } from "./permissions.config";
@@ -10,6 +11,9 @@ export const getSessionWithPermission = async (
 ): Promise<Session | null> => {
   const session = await readSession(request);
   if (!session) return null;
-  if (!rolesHavePermission(session.discordRoleIds, permission)) return null;
+  const hasPermission =
+    defaultMemberPermissions.includes(permission) ||
+    rolesHavePermission(session.discordRoleIds, permission);
+  if (!hasPermission) return null;
   return session;
 };

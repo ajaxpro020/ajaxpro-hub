@@ -5,7 +5,6 @@ import {
   exchangeDiscordCode,
   getDiscordGuildMember,
   getDiscordUser,
-  hasAllowedRole,
   redirect,
 } from "../../lib/discord-auth";
 
@@ -32,8 +31,6 @@ export async function GET(request: Request) {
       getDiscordUser(accessToken),
       getDiscordGuildMember(accessToken),
     ]);
-
-    if (!hasAllowedRole(member)) return fail("geen-rol");
 
     return redirect("/club", {
       "Set-Cookie": [clearStateCookie(), await createSessionCookie(user, member)],
