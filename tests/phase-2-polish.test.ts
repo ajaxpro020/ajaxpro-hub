@@ -19,6 +19,6 @@ test("beheer gebruikt afzonderlijke datum- en tijdvelden en geen datetime-local"
   assert.doesNotMatch(manage,/datetime-local/);
 });
 
-test("alle relevante HTML-renderers gebruiken stylesheetversie 5",()=>{
-  for(const file of ["../lib/motm-view.ts","../lib/motm-share.ts"]){const source=read(file);assert.match(source,/motm\.css\?v=5/);assert.doesNotMatch(source,/motm\.css\?v=4/);}
+test("alle relevante HTML-renderers gebruiken stylesheetversie 6",()=>{
+  for(const file of ["../lib/motm-view.ts","../lib/motm-share.ts"]){const source=read(file);assert.match(source,/motm\.css\?v=6/);assert.doesNotMatch(source,/motm\.css\?v=5/);}
 });

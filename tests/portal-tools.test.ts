@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { Session } from "../lib/discord-auth";
-import { adminToolsForSession, clubIntroForSession, renderToolSections, teamToolsForSession, toolsForSession } from "../lib/portal-tools.config";
+import { adminToolsForSession, clubIntroForSession, renderToolsGrid, teamToolsForSession, toolsForSession } from "../lib/portal-tools.config";
 
 const roles={owner:"1268471493046566987",admin:"1268471493046566986",moderator:"1268471493034246376",helper:"1271472085788786718",analyst:"1422264769863221319"};
 process.env.PORTAL_TEAM_TOOL_ROLE_IDS=Object.values(roles).join(",");
@@ -11,10 +11,10 @@ const ids=(roleIds:string[])=>toolsForSession(session(roleIds)).map(tool=>tool.i
 
 test("gewoon lid ziet geen tools of beheer",()=>assert.deepEqual(ids([]),[]));
 test("analist ziet beide teamtools maar geen beheer",()=>assert.deepEqual(ids([roles.analyst]),["tactics","screenshot"]));
-for(const role of ["helper","moderator","admin","owner"] as const)test(`${role} ziet Analistentools en MOTM-beheer`,()=>assert.deepEqual(new Set(ids([roles[role]])),new Set(["tactics","screenshot","motm-admin"])));
+for(const role of ["helper","moderator","admin","owner"] as const)test(`${role} ziet teamtools en MOTM-beheer`,()=>assert.deepEqual(new Set(ids([roles[role]])),new Set(["tactics","screenshot","motm-admin"])));
 test("meerdere rollen leveren gecombineerde rechten op",()=>assert.deepEqual(new Set(ids([roles.analyst,roles.helper])),new Set(["tactics","screenshot","motm-admin"])));
-test("lege Analistentools- en Beheer-secties worden volledig verborgen",()=>assert.equal(renderToolSections(toolsForSession(session([]))),""));
-test("publieke tools komen niet voor in Club-config of HTML",()=>{const html=renderToolSections(toolsForSession(session([roles.owner])));for(const title of ["Opstellingmaker","Contractenoverzicht","Bingo"])assert.doesNotMatch(html,new RegExp(title))});
+test("lege Tools-grid bevat geen kaarten",()=>assert.doesNotMatch(renderToolsGrid(toolsForSession(session([]))),/tool-card--/));
+test("publieke tools komen niet voor in Club-config of HTML",()=>{const html=renderToolsGrid(toolsForSession(session([roles.owner])));for(const title of ["Opstellingmaker","Contractenoverzicht","Bingo"])assert.doesNotMatch(html,new RegExp(title))});
 test("sectiehelpers houden Analistentools en Beheer contextueel gescheiden",()=>{const owner=session([roles.owner]);assert.deepEqual(teamToolsForSession(owner).map(tool=>tool.id),["tactics","screenshot"]);assert.deepEqual(adminToolsForSession(owner).map(tool=>tool.id),["motm-admin"])});
-test("gewone leden krijgen geen Analistentools-tekst in de Club-intro",()=>assert.equal(clubIntroForSession(session([])),"Stem op de Man of the Match en bekijk de laatste uitslagen."));
-test("bevoegde gebruikers krijgen de Analistentools-tekst en nieuwe sectielabels",()=>{const html=renderToolSections(toolsForSession(session([roles.analyst])));assert.equal(clubIntroForSession(session([roles.analyst])),"Stem op de Man of the Match en open je analistentools vanuit één vertrouwde plek.");assert.match(html,/Analistentools/);assert.match(html,/Voor analisten/);assert.doesNotMatch(html,/Teamtools|Voor de redactie/)});
+test("Club-intro noemt voor geen enkele rol tools",()=>{for(const roleIds of [[],[roles.analyst],[roles.owner]])assert.equal(clubIntroForSession(session(roleIds)),"Stem op de Man of the Match en bekijk de uitslagen.")});
+test("Tools-grid heeft één structuur zonder rolsecties",()=>{const html=renderToolsGrid(toolsForSession(session([roles.owner])));assert.match(html,/Tactiekbord/);assert.match(html,/Screenshot Editor/);assert.match(html,/MOTM-stemmingen beheren/);assert.doesNotMatch(html,/Analistentools|Beheer<\/h2>|Voor analisten|Voor staf/)});

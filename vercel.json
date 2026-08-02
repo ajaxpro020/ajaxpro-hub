@@ -13,6 +13,7 @@
     },
     { "source": "/club/motm", "destination": "/api/motm/index" },
     { "source": "/club/tools", "destination": "/api/club-tools" },
+    { "source": "/club/stand", "destination": "/api/motm/stand" },
     { "source": "/club/stemmen/:slug", "destination": "/api/motm/vote?slug=:slug" },
     { "source": "/stem/:slug", "destination": "/api/motm/share?slug=:slug" },
     { "source": "/club/motm/beheer", "destination": "/api/motm/manage?view=list" },

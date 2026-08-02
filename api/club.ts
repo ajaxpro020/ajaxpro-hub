@@ -4,7 +4,6 @@ import { getSessionWithPermission } from "../lib/server-permissions";
 import { db, resultsFor } from "../lib/motm-db";
 import { esc, formatMoment, matchTitle, page, pageHeader, remainingTime } from "../lib/motm-view";
 import { synchronizeAllMatches } from "../lib/motm-scheduling";
-import { adminToolsForSession, clubIntroForSession, renderToolSections, teamToolsForSession } from "../lib/portal-tools.config";
 
 export async function GET(request:Request){
   const session=await getSessionWithPermission(request,permissions.portalAccess);if(!session)return redirect("/api/auth/discord-login");
@@ -24,6 +23,5 @@ export async function GET(request:Request){
       }
     }
   }catch(error){console.error("Club MOTM spotlight failed",error);spotlight=`<section class="club-spotlight unavailable"><div><p class="eyebrow">Man of the Match</p><h2>Tijdelijk niet beschikbaar</h2><p>Probeer het later opnieuw.</p></div></section>`;}
-  const teamTools=teamToolsForSession(session),adminTools=adminToolsForSession(session),intro=clubIntroForSession(session);
-  return page("Club",`<main class="motm-main club-main">${pageHeader(`Welkom, ${session.username}`,"AjaxPro Club")}<p class="page-intro">${intro}</p>${spotlight}${teamTools.length?renderToolSections(teamTools):""}${adminTools.length?renderToolSections(adminTools):""}</main>`,"",session,"home");
+  return page("Club",`<main class="motm-main club-main">${pageHeader("AjaxPro Club","AjaxPro Club")}<p class="club-greeting">Welkom, ${esc(session.username)}.</p><p class="page-intro">Stem op de Man of the Match en bekijk de uitslagen.</p>${spotlight}</main>`,"",session,"home");
 }

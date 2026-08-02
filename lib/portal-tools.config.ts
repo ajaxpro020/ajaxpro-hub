@@ -26,10 +26,11 @@ const sectionOrder:Record<ToolSection,number>={team:0,admin:1};
 export const toolsForSession = (session: Session) => portalTools.filter(tool => !tool.requiredPermission || sessionHasPermission(session,tool.requiredPermission)).sort((a,b)=>sectionOrder[a.section]-sectionOrder[b.section]||a.order-b.order);
 export const teamToolsForSession = (session: Session) => toolsForSession(session).filter(tool => tool.section === "team");
 export const adminToolsForSession = (session: Session) => toolsForSession(session).filter(tool => tool.section === "admin");
-export const clubIntroForSession = (session: Session) => teamToolsForSession(session).length ? "Stem op de Man of the Match en open je analistentools vanuit één vertrouwde plek." : "Stem op de Man of the Match en bekijk de laatste uitslagen.";
+export const clubIntroForSession = (_session: Session) => "Stem op de Man of the Match en bekijk de uitslagen.";
 export const sectionTitles: Record<ToolSection,string>={team:"Analistentools",admin:"Beheer"};
 export const renderToolSections = (tools: readonly PortalTool[]) => (["team","admin"] as const).map(section=>{
   const items=tools.filter(tool=>tool.section===section);if(!items.length)return "";
   const rows=items.map(tool=>`<a class="tool-card tool-card--${esc(tool.id)}" href="${esc(tool.href)}"${tool.external?' target="_blank" rel="noreferrer"':""}><span class="tool-card__icon" aria-hidden="true"></span><span class="tool-card__copy"><strong>${esc(tool.title)}</strong><small>${esc(tool.description)}</small>${tool.status?`<em>${esc(tool.status)}</em>`:""}</span><b>${tool.external?"Open extern ↗":"Open →"}</b></a>`).join("");
   return `<section class="tool-section tool-section--${section}"><div class="section-heading"><div><p class="eyebrow">${section==="team"?"Voor analisten":"Voor staf"}</p><h2>${sectionTitles[section]}</h2></div></div><div class="tool-grid">${rows}</div></section>`;
 }).join("");
+export const renderToolsGrid = (tools: readonly PortalTool[]) => `<section class="tool-section"><div class="tool-grid">${tools.map(tool=>`<a class="tool-card tool-card--${esc(tool.id)}" href="${esc(tool.href)}"${tool.external?' target="_blank" rel="noreferrer"':""}><span class="tool-card__icon" aria-hidden="true"></span><span class="tool-card__copy"><strong>${esc(tool.title)}</strong><small>${esc(tool.description)}</small></span><b>${tool.external?"Open extern ↗":"Open →"}</b></a>`).join("")}</div></section>`;
