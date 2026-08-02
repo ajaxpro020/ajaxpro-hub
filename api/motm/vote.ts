@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const session = await getSessionWithPermission(request, permissions.portalAccess);
   if (!session) return redirect(`/api/auth/discord-login?returnTo=${encodeURIComponent(`/club/stemmen/${slug}`)}`);
   try {
-    let [match] = await db()`SELECT * FROM motm_matches WHERE slug=${slug}`;
+    let [match] = await db()`SELECT * FROM motm_matches WHERE slug=${slug} AND deleted_at IS NULL`;
     if (!match) return errorPage("Stemming niet gevonden", "Controleer de gedeelde link.", 404, session);
     match = await synchronizeMatch(match as any);
     const players = await db()`SELECT * FROM motm_match_players WHERE match_id=${match.id} ORDER BY shirt_number_snapshot NULLS LAST,name_snapshot`;
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   if (!session) return redirect(`/api/auth/discord-login?returnTo=${encodeURIComponent(`/club/stemmen/${slugOf(request)}`)}`);
   const slug = slugOf(request); const form = await request.formData(); const playerId = String(form.get("playerId") ?? "");
   try {
-    let [match] = await db()`SELECT * FROM motm_matches WHERE slug=${slug}`;
+    let [match] = await db()`SELECT * FROM motm_matches WHERE slug=${slug} AND deleted_at IS NULL`;
     if (!match) return errorPage("Stemming niet gevonden", "Controleer de link.", 404);
     const now = new Date();
     match = await synchronizeMatch(match as any, now);

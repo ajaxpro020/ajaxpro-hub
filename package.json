@@ -3,7 +3,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "npm run typecheck && tsx --test tests/*.test.ts",
-    "db:migrate": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/migrations/001_motm.sql"
+    "db:migrate": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/migrations/001_motm.sql",
+    "db:migrate:management": "tsx scripts/migrate-management.ts"
   },
   "dependencies": {
     "postgres": "^3.4.7"

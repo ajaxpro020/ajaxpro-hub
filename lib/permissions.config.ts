@@ -5,6 +5,7 @@ export const permissions = {
   toolsScreenshot: "tools.screenshot",
   adminManage: "admin.manage",
   motmManage: "motm.manage",
+  motmDelete: "motm.delete",
 } as const;
 
 export type Permission = (typeof permissions)[keyof typeof permissions];
@@ -26,6 +27,10 @@ export const rolesHavePermission = (
 ) => {
   if (permission === permissions.motmManage) {
     const allowed = idsFromEnv("MOTM_MANAGER_ROLE_IDS");
+    return roleIds.some(roleId => allowed.has(roleId));
+  }
+  if (permission === permissions.motmDelete) {
+    const allowed = idsFromEnv("MOTM_DELETE_ROLE_IDS");
     return roleIds.some(roleId => allowed.has(roleId));
   }
   if (permission === permissions.toolsTactics || permission === permissions.toolsScreenshot) {

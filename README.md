@@ -29,6 +29,7 @@ DISCORD_GUILD_ID=
 SESSION_SECRET=
 DATABASE_URL=
 MOTM_MANAGER_ROLE_IDS=
+MOTM_DELETE_ROLE_IDS=
 ```
 
 Gebruik voor `SESSION_SECRET` een cryptografisch willekeurige waarde van minimaal

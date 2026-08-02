@@ -17,6 +17,12 @@ test("motm.manage komt alleen uit de geconfigureerde rol-ID's", () => {
   assert.equal(rolesHavePermission(["Admin", "unknown", "22"], permissions.motmManage), false);
 });
 
+test("motm.delete komt uitsluitend uit de aparte Owner/Admin mapping",()=>{
+  process.env.MOTM_DELETE_ROLE_IDS="1268471493046566987,1268471493046566986";
+  assert.equal(rolesHavePermission(["1268471493046566986"],permissions.motmDelete),true);
+  assert.equal(rolesHavePermission(["1271472085788786718"],permissions.motmDelete),false);
+});
+
 test("teamtoolrechten komen alleen uit de centrale environmentmapping",()=>{
   process.env.PORTAL_TEAM_TOOL_ROLE_IDS="333, 444";
   assert.equal(rolesHavePermission(["333"],permissions.toolsTactics),true);
