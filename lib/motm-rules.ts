@@ -64,6 +64,17 @@ export const toAmsterdamInput = (value: string | Date) => {
   return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
 };
 
+export const toAmsterdamFields = (value: string | Date | null | undefined) => {
+  if (!value) return { date: "", time: "" };
+  const [date, time] = toAmsterdamInput(value).split("T");
+  return { date, time };
+};
+
+export const amsterdamFieldsToUtc = (date: string, time: string) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) return null;
+  return amsterdamInputToUtc(`${date}T${time}`);
+};
+
 export const defaultSchedule = (kickoffAt: Date) => {
   const openAt = new Date(kickoffAt.getTime() + 2 * 60 * 60 * 1000);
   return { openAt, closeAt: new Date(openAt.getTime() + 24 * 60 * 60 * 1000) };

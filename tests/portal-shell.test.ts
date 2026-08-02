@@ -16,10 +16,11 @@ test("de Club-shell voor een gewoon lid bevat alleen Home en Stemmen",async()=>{
   assert.match(html,/action="\/api\/auth\/logout"/);
 });
 
-test("de Club-shell toont Teamtools alleen met een teamtoolrecht",async()=>{
-  const html=await page("Teamtools","<main>Inhoud</main>","",analyst,"tools").text();
+test("de Club-shell toont Analistentools alleen met een teamtoolrecht",async()=>{
+  const html=await page("Analistentools","<main>Inhoud</main>","",analyst,"tools").text();
   assert.match(html,/href="\/club\/tools" class="active" aria-current="page"/);
-  assert.match(html,/>Teamtools<\/a>/);
+  assert.match(html,/>Analistentools<\/a>/);
+  assert.doesNotMatch(html,/>Teamtools<\/a>/);
   assert.equal((html.match(/class="mobile-nav"/g)??[]).length,1);
   assert.equal((html.match(/class="desktop-nav"/g)??[]).length,1);
 });
@@ -33,14 +34,14 @@ test("thuis- en uitwedstrijden gebruiken overal dezelfde centrale volgorde",()=>
   assert.match(matchHeading({...away,competition:"Eredivisie",kickoff_at:"2026-08-02T12:00:00Z",home_score:null}),/Feyenoord — Ajax/);
 });
 
-test("de Teamtools-403 gebruikt Home en markeert Stemmen niet actief",async()=>{
-  const html=await errorPage("Geen toegang","Geen Teamtools.",403,member,"/club","home").text();
+test("de Analistentools-403 gebruikt Home en markeert Stemmen niet actief",async()=>{
+  const html=await errorPage("Geen toegang","Geen Analistentools.",403,member,"/club","home").text();
   assert.match(html,/href="\/club" class="active" aria-current="page"/);
   assert.doesNotMatch(html,/href="\/club\/motm" class="active"/);
 });
 
-test("Club- en MOTM-pagina's laden stylesheetversie 4",async()=>{
+test("Club- en MOTM-pagina's laden stylesheetversie 5",async()=>{
   const html=await page("Club","<main>Inhoud</main>","",member,"home").text();
-  assert.match(html,/\/motm\.css\?v=4/);
-  assert.doesNotMatch(html,/\/motm\.css\?v=3/);
+  assert.match(html,/\/motm\.css\?v=5/);
+  assert.doesNotMatch(html,/\/motm\.css\?v=4/);
 });

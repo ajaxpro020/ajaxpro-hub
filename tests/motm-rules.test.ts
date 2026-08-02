@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { canVoteAt, rankResults, statusAt, voteLabel, winnerLabel } from "../lib/motm-rules";
+import { amsterdamFieldsToUtc, canVoteAt, rankResults, statusAt, toAmsterdamFields, voteLabel, winnerLabel } from "../lib/motm-rules";
 
 const openAt = "2026-08-01T20:00:00.000Z";
 const closeAt = "2026-08-02T20:00:00.000Z";
@@ -53,4 +53,16 @@ test("enkelvoud en meervoud worden correct weergegeven", () => {
   assert.equal(voteLabel(2),"2 stemmen");
   assert.equal(winnerLabel(1),"1 winnaar");
   assert.equal(winnerLabel(2),"gedeelde winnaars");
+});
+
+test("Amsterdamse datum- en tijdvelden combineren en vullen correct terug",()=>{
+  const utc=amsterdamFieldsToUtc("2026-08-02","20:30");
+  assert.equal(utc?.toISOString(),"2026-08-02T18:30:00.000Z");
+  assert.deepEqual(toAmsterdamFields(utc),{date:"2026-08-02",time:"20:30"});
+});
+
+test("ongeldige of niet-bestaande lokale datum/tijd wordt geweigerd",()=>{
+  assert.equal(amsterdamFieldsToUtc("2026-08-02","25:00"),null);
+  assert.equal(amsterdamFieldsToUtc("2026-03-29","02:30"),null);
+  assert.equal(amsterdamFieldsToUtc("evil","12:00"),null);
 });
