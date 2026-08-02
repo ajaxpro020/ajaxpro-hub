@@ -1,4 +1,5 @@
 .git
+.worktrees
 .netlify
 .DS_Store
 aqwire-email-reference

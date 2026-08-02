@@ -102,7 +102,7 @@ a {
   align-items: center;
   gap: 11px 18px;
   margin-inline: auto;
-  padding-block: 13px;
+  padding-block: 11px;
 }
 
 .next-match-banner__label {
@@ -183,7 +183,7 @@ a {
 
 .site-header {
   display: flex;
-  min-height: 72px;
+  min-height: 68px;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
@@ -370,6 +370,14 @@ a {
 }
 
 @media (max-width: 620px) {
+  .site-header {
+    gap: 10px;
+  }
+
+  .brand img {
+    height: 40px;
+  }
+
   .header-actions {
     gap: 7px;
   }
@@ -382,10 +390,28 @@ a {
   }
 
   .header-login {
-    max-width: 98px;
-    white-space: normal;
-    line-height: 1.05;
-    text-align: center;
+    padding-inline: 13px;
+    white-space: nowrap;
+  }
+
+  .intro {
+    padding-block: 18px 10px;
+  }
+
+  .intro h1 {
+    margin-top: 4px;
+    font-size: clamp(2.3rem, 11.5vw, 3.05rem);
+    line-height: 0.94;
+  }
+
+  .intro p {
+    margin-top: 14px;
+    font-size: 0.96rem;
+    line-height: 1.42;
+  }
+
+  .bento {
+    padding-block-start: 14px;
   }
 }
 
@@ -1212,8 +1238,21 @@ a {
 @media (max-width: 759px) {
   .lineup-tool-card {
     aspect-ratio: auto;
-    min-height: 430px;
+    min-height: 420px;
     padding: 24px 18px;
+  }
+
+  .lineup-tool-card__preview {
+    top: -12%;
+    right: -18%;
+    width: 68%;
+    height: 100%;
+    opacity: 0.72;
+  }
+
+  .lineup-tool-card__player {
+    top: 38%;
+    left: 44%;
   }
 
   .lineup-tool-card__content {
@@ -1263,6 +1302,10 @@ a {
   .lineup-tool-card__player-name {
     opacity: 1;
     transform: none;
+  }
+
+  .lineup-tool-card__player-name {
+    display: none;
   }
 }
 
@@ -1773,13 +1816,13 @@ a {
   .next-match-banner__inner {
     grid-template-columns: auto minmax(280px, 1fr) minmax(160px, auto);
     width: min(100% - 64px, var(--container));
-    min-height: 64px;
-    align-items: start;
-    padding-block: 8px;
+    min-height: 56px;
+    align-items: center;
+    padding-block: 6px;
   }
 
   .next-match-banner__label {
-    margin-top: 2px;
+    margin-top: 0;
   }
 
   .next-match-banner__watch {
@@ -1795,7 +1838,7 @@ a {
   }
 
   .site-header {
-    min-height: 88px;
+    min-height: 76px;
   }
 
   .brand img {
