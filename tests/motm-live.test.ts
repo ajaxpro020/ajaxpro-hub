@@ -28,5 +28,5 @@ test("live beheerroute en automatische polling zijn geconfigureerd",()=>{
   const routes=new Map(config.rewrites.map((route:{source:string;destination:string})=>[route.source,route.destination]));
   assert.equal(routes.get("/club/motm/beheer/:id/live"),"/api/motm/manage?view=live&id=:id");
   const script=readFileSync(new URL("../motm-admin.js",import.meta.url),"utf8");
-  assert.match(script,/setInterval\(load,8000\)/);assert.match(script,/textContent/);assert.doesNotMatch(script,/innerHTML/);
+  assert.match(script,/setInterval\(load,30000\)/);assert.doesNotMatch(script,/8 seconden/);assert.match(script,/textContent/);assert.doesNotMatch(script,/innerHTML/);
 });
