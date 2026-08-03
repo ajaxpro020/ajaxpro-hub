@@ -18,6 +18,11 @@
   --container: 1120px;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -492,13 +497,13 @@ a {
     transform 180ms ease;
 }
 
-.bento-card:hover,
-.bento-card:focus-visible {
-  border-color: rgba(246, 247, 251, 0.22);
+.bento .bento-card:hover,
+.bento .bento-card:focus-visible {
+  border-color: rgba(94, 122, 170, 0.42);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 18px 52px rgba(126, 155, 212, 0.09),
-    0 8px 24px rgba(0, 0, 0, 0.24);
+    inset 0 1px 0 rgba(190, 207, 236, 0.07),
+    0 0 16px rgba(52, 76, 116, 0.13),
+    0 12px 30px rgba(0, 0, 0, 0.22);
   transform: translateY(-1px);
 }
 
@@ -1236,6 +1241,34 @@ a {
 }
 
 @media (max-width: 759px) {
+  .bento > .lineup-tool-card {
+    order: 1;
+  }
+
+  .bento > .social-row {
+    order: 2;
+  }
+
+  .bento > .youtube-card {
+    order: 3;
+  }
+
+  .bento > .substack-card {
+    order: 4;
+  }
+
+  .bento > .discord-transfer-card {
+    order: 5;
+  }
+
+  .bento > .bingo-card {
+    order: 6;
+  }
+
+  .bento > .contracts-hub-card {
+    order: 7;
+  }
+
   .lineup-tool-card {
     aspect-ratio: auto;
     min-height: 420px;
@@ -1862,22 +1895,18 @@ a {
   .bento {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     grid-template-areas:
-      "lineup lineup transfers tactic"
+      "lineup lineup socials socials"
       "lineup lineup youtube youtube"
-      "substack substack socials socials"
-      "substack substack socials socials";
+      "substack substack transfers tactic";
     grid-template-rows:
-      minmax(150px, auto)
+      minmax(194px, auto)
       minmax(220px, auto)
-      86px
-      92px;
+      minmax(194px, auto);
     gap: 16px;
   }
 
   .lineup-tool-card {
     grid-area: lineup;
-    grid-column: span 2;
-    grid-row: span 2;
     padding: 32px;
   }
 
@@ -1966,7 +1995,6 @@ a {
 
   .social-row {
     grid-area: socials;
-    grid-column: span 2;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
     align-self: stretch;
@@ -1993,6 +2021,67 @@ a {
     padding-inline: 28px;
   }
 
+}
+
+/* iPad portrait and other narrow tablets need roomier cards than the desktop grid. */
+@media (min-width: 760px) and (max-width: 1039px) {
+  .bento {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "lineup socials"
+      "lineup socials"
+      "youtube youtube"
+      "substack substack"
+      "transfers tactic";
+    grid-template-rows:
+      minmax(170px, 1fr)
+      minmax(170px, 1fr)
+      minmax(220px, auto)
+      minmax(210px, auto)
+      minmax(170px, auto);
+  }
+
+  .lineup-tool-card {
+    grid-area: lineup;
+    aspect-ratio: auto;
+    min-width: 0;
+  }
+
+  .lineup-tool-card__content {
+    max-width: 100%;
+  }
+
+  .lineup-tool-card h2 {
+    max-width: 100%;
+    font-size: clamp(1.8rem, 4vw, 2.05rem);
+    line-height: 0.98;
+    overflow-wrap: anywhere;
+  }
+
+  .future-card,
+  .content-card,
+  .substack-card,
+  .social-row,
+  .social-card {
+    min-width: 0;
+  }
+
+  .future-card h2,
+  .content-card h2,
+  .lower-feature-card h2,
+  .social-card strong {
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+
+  .future-card h2 {
+    font-size: clamp(1.25rem, 3.2vw, 1.65rem);
+    line-height: 0.98;
+  }
+
+  .content-card h2 {
+    font-size: clamp(1.75rem, 4.5vw, 2.1rem);
+  }
 }
 
 @media (min-width: 1040px) {
