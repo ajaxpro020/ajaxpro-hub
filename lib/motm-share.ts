@@ -2,7 +2,7 @@ import { esc, formatKickoff, matchTitle } from "./motm-view";
 
 export type PublicMatch={slug:string;opponent:string;competition:string;kickoff_at:string|Date;home_or_away:"home"|"away";status:"draft"|"open"|"closed"};
 const origin="https://ajaxpro.fans";
-const image=`${origin}/assets/motm-share.jpg`;
+const image=`${origin}/assets/motm-share-v2.jpg`;
 export const publicMatchPath=(slug:string)=>`/stem/${encodeURIComponent(slug)}`;
 export const internalVotePath=(slug:string)=>`/club/stemmen/${encodeURIComponent(slug)}`;
 export const publicMatchUrl=(slug:string)=>`${origin}${publicMatchPath(slug)}`;
