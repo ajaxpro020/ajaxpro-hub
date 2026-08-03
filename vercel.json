@@ -19,6 +19,7 @@
     { "source": "/club/motm/beheer", "destination": "/api/motm/manage?view=list" },
     { "source": "/club/motm/nieuw", "destination": "/api/motm/manage?view=new" },
     { "source": "/club/motm/beheer/:id", "destination": "/api/motm/manage?view=detail&id=:id" },
+    { "source": "/club/motm/beheer/:id/live", "destination": "/api/motm/manage?view=live&id=:id" },
     {
       "source": "/geen-toegang",
       "destination": "/geen-toegang.html"

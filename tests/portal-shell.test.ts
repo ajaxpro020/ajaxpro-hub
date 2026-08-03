@@ -41,7 +41,7 @@ test("de Tools-403 gebruikt Home en markeert Stemmen niet actief",async()=>{
   assert.doesNotMatch(html,/href="\/club\/motm" class="active"/);
 });
 
-test("Club- en MOTM-pagina's laden stylesheetversie 6",async()=>{
+test("Club- en MOTM-pagina's laden stylesheetversie 7",async()=>{
   const html=await page("Club","<main>Inhoud</main>","",member,"home").text();
-  assert.match(html,/\/motm\.css\?v=6/);
+  assert.match(html,/\/motm\.css\?v=7/);
 });

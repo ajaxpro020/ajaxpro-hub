@@ -8,6 +8,7 @@ import { synchronizeAllMatches, synchronizeMatch } from "../../lib/motm-scheduli
 import { amsterdamFieldsToUtc, defaultSchedule, statusLabel, toAmsterdamFields, voteLabel, winnerLabel } from "../../lib/motm-rules";
 import { REVISION_CONFLICT, canDeleteMatch, mayRemovePlayer, nullableScore, parseRevision, safeAuditData, validDeleteConfirmation } from "../../lib/motm-management";
 import { seasonKeyFor, seasonOptions, validSeasonKey } from "../../lib/motm-season";
+import { buildLiveVoteSnapshot } from "../../lib/motm-live";
 
 const query = (request: Request) => new URL(request.url).searchParams;
 const manager = (request: Request) => getSessionWithPermission(request, permissions.motmManage);
@@ -26,6 +27,15 @@ const audit=async(tx:any,matchId:string,session:Session,action:string,before:Rec
 const actor=(row:any)=>row.actor_username_snapshot||row.actor_discord_user_id;
 const scoreFor=(match:any,team:"ajax"|"opponent")=>match.home_or_away==="home"?(team==="ajax"?match.home_score:match.away_score):(team==="ajax"?match.away_score:match.home_score);
 const matchSnapshot=(m:any)=>({opponent:m.opponent,competition:m.competition,kickoff_at:m.kickoff_at,home_or_away:m.home_or_away,home_score:m.home_score,away_score:m.away_score,status:m.status,scheduled_open_at:m.scheduled_open_at,scheduled_close_at:m.scheduled_close_at,season_key:m.season_key,counts_for_season:m.counts_for_season,season_exclusion_reason:m.season_exclusion_reason});
+const liveVotePanel=(match:any,rows:any[],total:number)=>{const visible=rows.filter(row=>Number(row.votes)>0).sort((a,b)=>Number(b.votes)-Number(a.votes)||String(a.name_snapshot).localeCompare(String(b.name_snapshot),"nl"));return `<section class="management-section live-votes" data-live-votes data-live-status="${esc(match.status)}" data-live-url="/club/motm/beheer/${esc(match.id)}/live"><div class="live-votes__heading"><div><p class="eyebrow">Alleen voor beheer</p><h2>Live stemverloop</h2></div><div class="live-votes__total"><strong data-live-total>${total}</strong><span data-live-total-label>${total===1?"stem":"stemmen"}</span></div></div><p class="live-votes__meta"><span class="live-dot${match.status==="open"?" is-live":""}" aria-hidden="true"></span><span data-live-message>${match.status==="open"?"Wordt elke 8 seconden bijgewerkt.":match.status==="closed"?"Definitieve stemverdeling.":"De stemming is nog niet geopend."}</span> <time data-live-updated>Zojuist bijgewerkt</time></p><div class="live-votes__list" data-live-list>${visible.length?visible.map(row=>{const votes=Number(row.votes),percentage=total?Math.round(votes*100/total):0;return `<div class="live-vote-row" data-player-id="${esc(row.player_id)}"><img src="${esc(row.image_url_snapshot)}" alt=""><strong>${esc(row.name_snapshot)}</strong><span>${votes} · ${percentage}%</span><progress max="100" value="${percentage}" aria-hidden="true"></progress></div>`}).join(""):`<p class="live-votes__empty" data-live-empty>Nog geen stemmen uitgebracht.</p>`}</div><button class="button secondary live-votes__refresh" type="button" data-live-refresh>Nu verversen</button><p class="live-votes__error" data-live-error hidden>Bijwerken lukt tijdelijk niet.</p></section>`;};
+
+async function liveVotes(id:string){
+  let [match]=await db()`SELECT id,status,scheduled_open_at,scheduled_close_at FROM motm_matches WHERE id=${id} AND deleted_at IS NULL`;
+  if(!match)return new Response(JSON.stringify({error:"not_found"}),{status:404,headers:{"Content-Type":"application/json; charset=UTF-8","Cache-Control":"no-store"}});
+  match=await synchronizeMatch(match as any);
+  const rows=await db()`SELECT p.player_id,p.name_snapshot,p.image_url_snapshot,count(v.player_id)::int votes FROM motm_match_players p LEFT JOIN motm_votes v ON v.match_id=p.match_id AND v.player_id=p.player_id WHERE p.match_id=${id} GROUP BY p.player_id,p.name_snapshot,p.image_url_snapshot`;
+  return new Response(JSON.stringify(buildLiveVoteSnapshot(match.status,rows.map((row:any)=>({...row,votes:Number(row.votes)})))),{headers:{"Content-Type":"application/json; charset=UTF-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"}});
+}
 
 async function detail(request:Request,session:Session,id:string){
   let [match]=await db()`SELECT * FROM motm_matches WHERE id=${id}`;
@@ -49,7 +59,7 @@ async function detail(request:Request,session:Session,id:string){
   const logHtml=`<section class="management-section"><h2>6. Wijzigingslog</h2>${logs.length?`<ol class="audit-log">${logs.map((row:any)=>`<li><time>${esc(formatMoment(row.created_at))}</time><strong>${esc(auditSummary[row.action]??row.action)}</strong><span>${esc(actor(row))}</span>${row.after_data?.summary?`<small>${esc(String(row.after_data.summary))}</small>`:""}</li>`).join("")}</ol>`:"<p>Nog geen wijzigingen vastgelegd.</p>"}</section>`;
   const winner=match.status==="closed"&&winners.length?` · ${winnerLabel(winners.length)}: ${esc(winners.map(row=>row.name_snapshot).join(" & "))}`:"";
   const actions=!match.deleted_at?`<form method="post" class="inline-action">${revisionInput(revision)}<button class="button secondary" name="intent" value="duplicate">Stemming dupliceren</button></form>`:"";
-  return page("Stemming beheren",`<main class="motm-main admin">${pageHeader("Wedstrijdbeheer","MOTM-beheer","/club/motm/beheer","Beheer",actions)}<section class="match-head"><span class="status status-${match.deleted_at?"deleted":match.status}">${match.deleted_at?"Verwijderd":statusLabel(match.status)}</span>${matchHeading(match)}<p>${voteLabel(Number(count))} · ${matchPlayers.length} spelers${winner}</p></section>${matchForm}${planning}${playersSection}${share}${danger}${logHtml}</main>`,"/motm-admin.js",session);
+  return page("Stemming beheren",`<main class="motm-main admin">${pageHeader("Wedstrijdbeheer","MOTM-beheer","/club/motm/beheer","Beheer",actions)}<section class="match-head"><span class="status status-${match.deleted_at?"deleted":match.status}">${match.deleted_at?"Verwijderd":statusLabel(match.status)}</span>${matchHeading(match)}<p>${voteLabel(Number(count))} · ${matchPlayers.length} spelers${winner}</p></section>${!match.deleted_at?liveVotePanel(match,matchPlayers,Number(count)):""}${matchForm}${planning}${playersSection}${share}${danger}${logHtml}</main>`,"/motm-admin.js",session);
 }
 
 export async function GET(request:Request){
@@ -57,6 +67,7 @@ export async function GET(request:Request){
   const view=query(request).get("view")??"list",id=query(request).get("id");
   try{
     await synchronizeAllMatches();
+    if(view==="live"&&id)return liveVotes(id);
     if(view==="new"){const defaultSeason=seasonKeyFor(new Date());return page("Nieuwe stemming",`<main class="motm-main admin new-poll">${pageHeader("Nieuwe stemming","MOTM-beheer","/club/motm/beheer","Beheer")}<form method="post" action="/club/motm/nieuw"><fieldset><legend><span>1</span> Wedstrijd</legend><div class="form-grid"><label>Tegenstander<input required name="opponent"></label><label>Competitie<input required name="competition" value="Eredivisie"></label>${dateTimeFields("kickoff","Aftrap",null)}<label>Thuis of uit<select name="homeOrAway"><option value="home">Thuis</option><option value="away">Uit</option></select></label>${seasonFields(defaultSeason)}<label>Doelpunten Ajax<input min="0" max="99" type="number" name="ajaxScore"></label><label>Doelpunten tegenstander<input min="0" max="99" type="number" name="opponentScore"></label></div></fieldset><fieldset><legend><span>2</span> Planning</legend><div class="form-grid">${scheduleFields()}</div></fieldset><fieldset><legend><span>3</span> Spelers</legend>${playerPicker()}</fieldset><fieldset><legend><span>4</span> Afronden</legend><div class="admin-actions"><button class="button secondary" name="intent" value="draft">Opslaan als concept</button><button class="button" name="intent" value="open">Direct openen</button></div></fieldset></form></main>`,"/motm-admin.js",session);}
     if(id)return detail(request,session,id);
     const term=(query(request).get("q")??"").trim();
