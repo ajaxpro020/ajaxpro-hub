@@ -20,7 +20,7 @@ test("beheer gebruikt afzonderlijke datum- en tijdvelden en geen datetime-local"
 });
 
 test("de Club-renderer gebruikt de actuele stylesheetversie",()=>{
-  const source=read("../lib/motm-view.ts");assert.match(source,/motm\.css\?v=27/);assert.doesNotMatch(source,/motm\.css\?v=26/);
+  const source=read("../lib/motm-view.ts");assert.match(source,/motm\.css\?v=28/);assert.doesNotMatch(source,/motm\.css\?v=27/);
 });
 
 test("ledenresultaten tonen percentages en geen ruwe stemaantallen",()=>{
@@ -64,12 +64,12 @@ test("recente uitslagen tonen de eigen stem met spelersfoto als apart blok",()=>
   assert.match(css,/\.match-row__vote img/);
 });
 
-test("gesloten beheer toont automatisch een vervangbare winnaarvisual-placeholder",()=>{
+test("gesloten beheer toont automatisch de beheer-only resultaatvisual",()=>{
   const manage=read("../api/motm/manage.ts");
-  assert.match(manage,/match\.status==="closed"\?`<div class="admin-winner-visual"/);
+  assert.match(manage,/createMotmVisualData/);
   assert.match(manage,/data-winner-visual/);
-  assert.match(manage,/Download Man of the Match/);
-  assert.doesNotMatch(manage,/Winnaarvisual maken/);
+  assert.match(manage,/Download PNG/);
+  assert.doesNotMatch(manage,/motm-winner-placeholder\.svg/);
 });
 
 test("beheer zet de openbare stemlink direct boven de bewerkstappen",()=>{

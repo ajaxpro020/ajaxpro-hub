@@ -25,3 +25,59 @@ if(livePanel){
   refresh.addEventListener('click',load);
   if(livePanel.dataset.liveStatus==='open')timer=setInterval(load,30000);
 }
+
+const winnerVisual=document.querySelector('[data-winner-visual]');
+if(winnerVisual){
+  const canvas=winnerVisual.querySelector('canvas'),context=canvas.getContext('2d'),status=winnerVisual.querySelector('[data-visual-status]'),download=winnerVisual.querySelector('[data-download-visual]');
+  let pngBlob;
+  const loadImage=source=>new Promise((resolve,reject)=>{const image=new Image();image.decoding='async';image.onload=()=>resolve(image);image.onerror=()=>reject(new Error(`IMAGE_LOAD_FAILED:${source}`));image.src=source});
+  const font=(size,family,weight)=>`${weight} ${size}px "${family}"`;
+  const fitSize=(text,preferred,minimum,maximumWidth,family,weight)=>{let size=preferred;while(size>minimum){context.font=font(size,family,weight);if(context.measureText(text).width<=maximumWidth)break;size-=1}return size};
+  const drawFitText=({text,x,y,preferred,minimum,width,family,weight,color,align='left'})=>{const size=fitSize(text,preferred,minimum,width,family,weight);context.font=font(size,family,weight);context.fillStyle=color;context.textAlign=align;context.textBaseline='alphabetic';context.fillText(text,x,y,width);return size};
+  const render=async()=>{
+    try{
+      await Promise.all([
+        document.fonts.load('700 64px "AjaxPro Bebas Visual"'),
+        document.fonts.load('700 83px "AjaxPro Refrigerator"'),
+        document.fonts.load('900 141px "AjaxPro Refrigerator"'),
+        document.fonts.load('400 40px "AjaxPro Refrigerator"'),
+      ]);
+      await document.fonts.ready;
+      const [template,player]=await Promise.all([loadImage(winnerVisual.dataset.templateUrl),loadImage(winnerVisual.dataset.playerImage)]);
+      context.clearRect(0,0,canvas.width,canvas.height);
+      context.imageSmoothingEnabled=true;
+      context.imageSmoothingQuality='high';
+      context.drawImage(template,0,0,canvas.width,canvas.height);
+
+      const playerHeight=1050,playerWidth=player.naturalWidth/player.naturalHeight*playerHeight;
+      context.save();
+      context.shadowColor='rgba(16,16,16,.28)';
+      context.shadowBlur=18;
+      context.shadowOffsetX=-6;
+      context.shadowOffsetY=8;
+      context.drawImage(player,610,30,playerWidth,playerHeight);
+      context.restore();
+
+      drawFitText({text:winnerVisual.dataset.matchTitle,x:48,y:456,preferred:64,minimum:38,width:625,family:'AjaxPro Bebas Visual',weight:700,color:'#101010'});
+      const firstName=winnerVisual.dataset.firstName,lastName=winnerVisual.dataset.lastName;
+      if(lastName){
+        drawFitText({text:firstName,x:180,y:690,preferred:83,minimum:44,width:245,family:'AjaxPro Refrigerator',weight:700,color:'#101010',align:'center'});
+        drawFitText({text:lastName,x:180,y:775,preferred:83,minimum:44,width:245,family:'AjaxPro Refrigerator',weight:700,color:'#101010',align:'center'});
+      }else{
+        drawFitText({text:firstName,x:180,y:735,preferred:83,minimum:44,width:245,family:'AjaxPro Refrigerator',weight:700,color:'#101010',align:'center'});
+      }
+      drawFitText({text:`#${winnerVisual.dataset.shirtNumber}`,x:180,y:865,preferred:83,minimum:58,width:245,family:'AjaxPro Refrigerator',weight:700,color:'#101010',align:'center'});
+      drawFitText({text:`${winnerVisual.dataset.percentage}%`,x:410,y:815,preferred:205,minimum:125,width:300,family:'AjaxPro Refrigerator',weight:900,color:'#A50324'});
+      drawFitText({text:'VAN DE STEMMEN',x:410,y:868,preferred:48,minimum:36,width:300,family:'AjaxPro Refrigerator',weight:400,color:'#101010'});
+
+      pngBlob=await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('PNG_EXPORT_FAILED')),'image/png'));
+      status.textContent='Definitieve preview · 1350 × 1080 px';
+      download.disabled=false;
+    }catch(error){
+      console.error('MOTM visual generation failed',error);
+      status.textContent='De resultaatvisual kon niet worden geladen.';
+    }
+  };
+  download.addEventListener('click',()=>{if(!pngBlob)return;const url=URL.createObjectURL(pngBlob),link=document.createElement('a');link.href=url;link.download=winnerVisual.dataset.filename;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)});
+  render();
+}

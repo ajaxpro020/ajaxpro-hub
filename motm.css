@@ -158,3 +158,13 @@ a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible,s
 .vote-receipt{margin-bottom:var(--space-xl)}.vote-receipt>.back{margin-bottom:var(--space-md)}.vote-page--voted .vote-confirmation{margin:0}.vote-page--voted .vote-confirmation h1{max-width:18ch;margin:0 0 var(--space-xs);font-size:clamp(1.65rem,7vw,2.35rem);line-height:1.05;letter-spacing:-.03em}.vote-page--voted .vote-confirmation p:last-child{display:flex;flex-direction:column;gap:2px}.vote-page--voted .vote-confirmation p:last-child strong{color:var(--success);font-size:.82rem}.vote-page--voted .vote-confirmation p:last-child span{color:var(--muted);font-size:.82rem}.vote-page--voted form>section{padding-top:0}.vote-page--voted form>section>h2{font-size:1.45rem}
 @media(max-width:699px){.vote-page--voted{padding-top:var(--space-lg)}.vote-page--voted .vote-confirmation{grid-template-columns:88px minmax(0,1fr);min-height:132px;padding:var(--space-md) var(--space-md) 0}.vote-page--voted .vote-confirmation img{width:88px;height:116px}.vote-page--voted .vote-confirmation>div{padding-bottom:var(--space-md)}}
 @media(min-width:700px){.vote-receipt{margin-bottom:var(--space-2xl)}.vote-page--voted .vote-confirmation{max-width:760px}}
+
+/* Club v28: deterministic admin-only MOTM PNG generator. */
+@font-face{font-family:"AjaxPro Refrigerator";src:url("/assets/fonts/refrigerator-deluxe-regular.otf") format("opentype");font-weight:400;font-style:normal;font-display:block}
+@font-face{font-family:"AjaxPro Refrigerator";src:url("/assets/fonts/refrigerator-deluxe-bold.otf") format("opentype");font-weight:700;font-style:normal;font-display:block}
+@font-face{font-family:"AjaxPro Refrigerator";src:url("/assets/fonts/refrigerator-deluxe-heavy.otf") format("opentype");font-weight:900;font-style:normal;font-display:block}
+@font-face{font-family:"AjaxPro Bebas Visual";src:url("/assets/fonts/bebas-neue-visual.woff2") format("woff2");font-weight:700;font-style:normal;font-display:block}
+.admin-winner-visual .winner-visual-frame{max-width:675px}
+.admin-winner-visual canvas{display:block;width:100%;height:auto;aspect-ratio:5/4;border:1px solid rgba(255,255,255,.14);border-radius:16px;background:#20242a}
+.admin-winner-visual [data-download-visual]{margin-top:12px}
+.admin-winner-visual [data-download-visual]:disabled{cursor:wait;opacity:.55}
