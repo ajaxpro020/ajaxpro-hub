@@ -2,9 +2,9 @@ import { isSameOrigin, redirect } from "../../lib/discord-auth";
 import { permissions } from "../../lib/permissions.config";
 import { getSessionWithPermission } from "../../lib/server-permissions";
 import { db, resultsFor } from "../../lib/motm-db";
+import { saveVoteAtomically } from "../../lib/motm-voting";
 import { esc, errorPage, formatMoment, matchHeading, matchTitle, page, pageHeader } from "../../lib/motm-view";
 import { synchronizeMatch } from "../../lib/motm-scheduling";
-import { canVoteAt } from "../../lib/motm-rules";
 
 const slugOf = (request: Request) => new URL(request.url).searchParams.get("slug")?.trim() ?? "";
 export async function GET(request: Request) {
@@ -38,14 +38,10 @@ export async function POST(request: Request) {
   if (!session) return redirect(`/api/auth/discord-login?returnTo=${encodeURIComponent(`/club/stemmen/${slugOf(request)}`)}`);
   const slug = slugOf(request); const form = await request.formData(); const playerId = String(form.get("playerId") ?? "");
   try {
-    let [match] = await db()`SELECT * FROM motm_matches WHERE slug=${slug} AND deleted_at IS NULL`;
-    if (!match) return errorPage("Stemming niet gevonden", "Controleer de link.", 404);
-    const now = new Date();
-    match = await synchronizeMatch(match as any, now);
-    if (!canVoteAt(match as any, now)) return errorPage("Stemmen niet mogelijk", "Deze stemming is niet open of de sluitingstijd is bereikt.", 409);
-    const [selected] = await db()`SELECT 1 FROM motm_match_players WHERE match_id=${match.id} AND player_id=${playerId}`;
-    if (!selected) return errorPage("Ongeldige speler", "Deze speler hoort niet bij deze wedstrijd.", 400);
-    await db()`INSERT INTO motm_votes(match_id,voter_discord_user_id,player_id) VALUES(${match.id},${session.userId},${playerId}) ON CONFLICT(match_id,voter_discord_user_id) DO UPDATE SET player_id=excluded.player_id,updated_at=now()`;
+    const result = await saveVoteAtomically(db() as any, slug, session.userId, playerId);
+    if (result === "not_found") return errorPage("Stemming niet gevonden", "Controleer de link.", 404);
+    if (result === "closed") return errorPage("Stemmen niet mogelijk", "Deze stemming is niet open of de sluitingstijd is bereikt.", 409);
+    if (result === "invalid_player") return errorPage("Ongeldige speler", "Deze speler hoort niet bij deze wedstrijd.", 400);
     return redirect(`/club/stemmen/${slug}`);
   } catch (error) { console.error("MOTM vote failed", error); return errorPage("Stem niet opgeslagen", "Probeer het over een moment opnieuw.", 503); }
 }
