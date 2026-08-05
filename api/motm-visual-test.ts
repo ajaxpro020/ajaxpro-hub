@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="robots" content="noindex,nofollow">
     <title>MOTM visualtest</title>
-    <link rel="stylesheet" href="/motm.css?v=29">
+    <link rel="stylesheet" href="/motm.css?v=30">
   </head>
   <body>
     <main class="motm-main admin">

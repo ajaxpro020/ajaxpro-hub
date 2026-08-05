@@ -1,5 +1,12 @@
 const resultShare = document.querySelector("[data-result-share]");
 
+if (document.querySelector("[data-winner-visual]")) {
+  const visualScript = document.createElement("script");
+  visualScript.src = "/motm-admin.js";
+  visualScript.defer = true;
+  document.head.append(visualScript);
+}
+
 resultShare?.querySelector("[data-native-share]")?.addEventListener("click", async (event) => {
   const button = event.currentTarget;
   const payload = {

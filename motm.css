@@ -181,3 +181,9 @@ a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible,s
 .home-vote-receipt strong{color:var(--success);font-size:.82rem}
 @media(max-width:699px){.club-spotlight--open.has-vote{grid-template-columns:1fr}.club-spotlight--open.has-vote .home-vote-receipt,.club-spotlight--open.has-vote .spotlight-actions{grid-column:1}.club-spotlight--open.has-vote .spotlight-actions .button{width:100%}}
 @media(min-width:700px){.club-spotlight--open.has-vote{grid-template-columns:minmax(190px,.7fr) minmax(320px,1.3fr) auto;align-items:center}.club-spotlight--open.has-vote .home-vote-receipt{min-height:132px}.club-spotlight--open.has-vote .home-vote-receipt img{width:94px;height:120px}.club-spotlight--open.has-vote .spotlight-actions{grid-column:auto}.club-spotlight--open.has-vote .spotlight-actions .button{white-space:nowrap}}
+
+/* Club v30: render the real MOTM canvas on the closed-result Home card. */
+.home-winner-visual{min-width:0}
+.home-winner-visual .winner-visual-frame{max-width:100%}
+.home-winner-visual canvas{display:block;width:100%;height:auto;aspect-ratio:5/4;border:1px solid rgba(255,255,255,.14);border-radius:16px;background:#20242a}
+.home-winner-visual [data-visual-status]{min-height:1em}

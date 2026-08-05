@@ -64,10 +64,13 @@ test("Canvas-export gebruikt exact 1350 bij 1080 en wacht op fonts en afbeelding
   for(const font of ["refrigerator-deluxe-regular.otf","refrigerator-deluxe-bold.otf","refrigerator-deluxe-heavy.otf","bebas-neue-visual.woff2"])assert.ok(css.includes(font));
 });
 
-test("de generator blijft uitsluitend onderdeel van de beschermde beheerroute", () => {
+test("de generator wordt gedeeld door beheer en Club-home, maar niet door de stempagina", () => {
   const manage=readFileSync(new URL("../api/motm/manage.ts",import.meta.url),"utf8");
+  const club=readFileSync(new URL("../api/club.ts",import.meta.url),"utf8");
   const vote=readFileSync(new URL("../api/motm/vote.ts",import.meta.url),"utf8");
   assert.match(manage,/getSessionWithPermission\(request, permissions\.motmManage\)/);
   assert.match(manage,/data-download-visual/);
+  assert.match(club,/createMotmVisualData/);
+  assert.match(club,/data-winner-visual/);
   assert.doesNotMatch(vote,/data-download-visual|createMotmVisualData/);
 });

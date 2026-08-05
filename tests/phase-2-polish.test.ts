@@ -20,7 +20,7 @@ test("beheer gebruikt afzonderlijke datum- en tijdvelden en geen datetime-local"
 });
 
 test("de Club-renderer gebruikt de actuele stylesheetversie",()=>{
-  const source=read("../lib/motm-view.ts");assert.match(source,/motm\.css\?v=29/);assert.doesNotMatch(source,/motm\.css\?v=28/);
+  const source=read("../lib/motm-view.ts");assert.match(source,/motm\.css\?v=30/);assert.doesNotMatch(source,/motm\.css\?v=29/);
 });
 
 test("ledenresultaten tonen percentages en geen ruwe stemaantallen",()=>{
@@ -88,13 +88,16 @@ test("Club-home houdt de visual tot een nieuwe stemming opent en gebruikt appara
   assert.doesNotMatch(home,/wa\.me|twitter\.com\/intent\/tweet|facebook\.com\/sharer|Instagram staat in het deelmenu/);
   assert.match(home,/desktop-visual-download/);
   assert.match(home,/Bekijk volledige uitslag/);
-  assert.match(home,/motm-winner-placeholder\.svg/);
+  assert.match(home,/createMotmVisualData/);
+  assert.match(home,/data-winner-visual/);
+  assert.match(home,/data-download-visual/);
+  assert.doesNotMatch(home,/motm-winner-placeholder\.svg/);
   assert.match(home,/Vorige uitslag/);
   assert.match(home,/Laatste Man of the Match/);
-  assert.match(home,/data-share-filename="\$\{esc\(filename\)\}"/);
+  assert.match(script,/visualScript\.src = "\/motm-admin\.js"/);
   assert.match(script,/navigator\.share/);
   assert.match(script,/navigator\.canShare\(\{ files: \[file\] \}\)/);
-  assert.match(css,/aspect-ratio:16\/9/);
+  assert.match(css,/\.home-winner-visual canvas\{[^}]*aspect-ratio:5\/4/);
   assert.match(css,/desktop-visual-download\{display:none\}/);
   assert.match(css,/@media\(min-width:700px\).*mobile-visual-share\{display:none\}/s);
 });
