@@ -2,7 +2,7 @@ const resultShare = document.querySelector("[data-result-share]");
 
 if (document.querySelector("[data-winner-visual]")) {
   const visualScript = document.createElement("script");
-  visualScript.src = "/motm-admin.js";
+  visualScript.src = "/motm-admin.js?v=2";
   visualScript.defer = true;
   document.head.append(visualScript);
 }

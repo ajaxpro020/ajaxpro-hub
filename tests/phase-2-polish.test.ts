@@ -94,7 +94,7 @@ test("Club-home houdt de visual tot een nieuwe stemming opent en gebruikt appara
   assert.doesNotMatch(home,/motm-winner-placeholder\.svg/);
   assert.match(home,/Vorige uitslag/);
   assert.match(home,/Laatste Man of the Match/);
-  assert.match(script,/visualScript\.src = "\/motm-admin\.js"/);
+  assert.match(script,/visualScript\.src = "\/motm-admin\.js\?v=2"/);
   assert.match(script,/navigator\.share/);
   assert.match(script,/navigator\.canShare\(\{ files: \[file\] \}\)/);
   assert.match(css,/\.home-winner-visual canvas\{[^}]*aspect-ratio:5\/4/);

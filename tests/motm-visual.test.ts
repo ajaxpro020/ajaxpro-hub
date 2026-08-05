@@ -61,6 +61,7 @@ test("Canvas-export gebruikt exact 1350 bij 1080 en wacht op fonts en afbeelding
   assert.match(script,/document\.fonts\.ready/);
   assert.match(script,/Promise\.all\(\[loadImage\(winnerVisual\.dataset\.templateUrl\),loadImage\(winnerVisual\.dataset\.playerImage\)\]\)/);
   assert.match(script,/canvas\.toBlob\(.+['"]image\/png['"]/s);
+  assert.match(script,/winnerVisual\.querySelector\('\[data-download-visual\]'\)\|\|document\.querySelector\('\[data-download-visual\]'\)/);
   for(const font of ["refrigerator-deluxe-regular.otf","refrigerator-deluxe-bold.otf","refrigerator-deluxe-heavy.otf","bebas-neue-visual.woff2"])assert.ok(css.includes(font));
 });
 

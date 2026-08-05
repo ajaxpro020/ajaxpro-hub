@@ -28,7 +28,7 @@ if(livePanel){
 
 const winnerVisual=document.querySelector('[data-winner-visual]');
 if(winnerVisual){
-  const canvas=winnerVisual.querySelector('canvas'),context=canvas.getContext('2d'),status=winnerVisual.querySelector('[data-visual-status]'),download=winnerVisual.querySelector('[data-download-visual]');
+  const canvas=winnerVisual.querySelector('canvas'),context=canvas.getContext('2d'),status=winnerVisual.querySelector('[data-visual-status]'),download=winnerVisual.querySelector('[data-download-visual]')||document.querySelector('[data-download-visual]');
   let pngBlob;
   const loadImage=source=>new Promise((resolve,reject)=>{const image=new Image();image.decoding='async';image.onload=()=>resolve(image);image.onerror=()=>reject(new Error(`IMAGE_LOAD_FAILED:${source}`));image.src=source});
   const font=(size,family,weight)=>`${weight} ${size}px "${family}"`;
@@ -72,12 +72,12 @@ if(winnerVisual){
 
       pngBlob=await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('PNG_EXPORT_FAILED')),'image/png'));
       status.textContent='Definitieve preview · 1350 × 1080 px';
-      download.disabled=false;
+      if(download)download.disabled=false;
     }catch(error){
       console.error('MOTM visual generation failed',error);
       status.textContent='De resultaatvisual kon niet worden geladen.';
     }
   };
-  download.addEventListener('click',()=>{if(!pngBlob)return;const url=URL.createObjectURL(pngBlob),link=document.createElement('a');link.href=url;link.download=winnerVisual.dataset.filename;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)});
+  download?.addEventListener('click',()=>{if(!pngBlob)return;const url=URL.createObjectURL(pngBlob),link=document.createElement('a');link.href=url;link.download=winnerVisual.dataset.filename;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)});
   render();
 }
