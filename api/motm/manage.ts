@@ -1,6 +1,6 @@
 import { isSameOrigin, redirect, type Session } from "../../lib/discord-auth";
 import { permissions } from "../../lib/permissions.config";
-import { getSessionWithPermission } from "../../lib/server-permissions";
+import { getSessionWithPermission, isDiscordAuthorizationUnavailable } from "../../lib/server-permissions";
 import { players } from "../../data/players";
 import { db, resultsFor } from "../../lib/motm-db";
 import { esc, errorPage, formatKickoff, formatMoment, matchHeading, matchTitle, page, pageHeader, remainingTime } from "../../lib/motm-view";
@@ -13,6 +13,7 @@ import { createMotmVisualData, MOTM_VISUAL_HEIGHT, MOTM_VISUAL_TEMPLATE_URL, MOT
 
 const query = (request: Request) => new URL(request.url).searchParams;
 const manager = (request: Request) => getSessionWithPermission(request, permissions.motmManage);
+const authorizationUnavailable=()=>errorPage("Beheercontrole niet beschikbaar","Je beheerrechten konden niet veilig worden gecontroleerd. Probeer het later opnieuw of log opnieuw in.",503);
 const activePlayers=players.filter(player=>player.active);
 const slugify=(value:string)=>value.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,50);
 const revisionInput=(revision:number)=>`<input type="hidden" name="revision" value="${revision}">`;
@@ -67,7 +68,7 @@ async function detail(request:Request,session:Session,id:string){
 }
 
 export async function GET(request:Request){
-  const session=await manager(request);if(!session)return errorPage("Geen beheerrecht","Je hebt motm.manage nodig om stemmingen te beheren.",403);
+  let session:Session|null;try{session=await manager(request)}catch(error){if(isDiscordAuthorizationUnavailable(error))return authorizationUnavailable();throw error}if(!session)return errorPage("Geen beheerrecht","Je hebt motm.manage nodig om stemmingen te beheren.",403);
   const view=query(request).get("view")??"list",id=query(request).get("id");
   try{
     await synchronizeAllMatches();
@@ -84,7 +85,7 @@ export async function GET(request:Request){
 
 export async function POST(request:Request){
   if(!isSameOrigin(request))return errorPage("Ongeldige aanvraag","Ververs de pagina.",403);
-  const session=await manager(request);if(!session)return errorPage("Geen beheerrecht","Je hebt motm.manage nodig.",403);
+  let session:Session|null;try{session=await manager(request)}catch(error){if(isDiscordAuthorizationUnavailable(error))return authorizationUnavailable();throw error}if(!session)return errorPage("Geen beheerrecht","Je hebt motm.manage nodig.",403);
   const id=query(request).get("id"),form=await request.formData(),intent=String(form.get("intent")??"");
   try{
     if(!id)return createMatch(form,intent,session);

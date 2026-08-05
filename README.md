@@ -26,6 +26,7 @@ DISCORD_CLIENT_ID=
 DISCORD_CLIENT_SECRET=
 DISCORD_REDIRECT_URI=
 DISCORD_GUILD_ID=
+DISCORD_BOT_TOKEN=
 SESSION_SECRET=
 DATABASE_URL=
 MOTM_MANAGER_ROLE_IDS=
@@ -45,8 +46,10 @@ database die vanuit Vercel bereikbaar is (bijvoorbeeld Neon of Vercel Postgres).
 
 Voeg in het Discord Developer Portal bij **OAuth2 → Redirects** elke gebruikte URI
 exact toe. Kopieer onder **General Information** de Application ID naar
-`DISCORD_CLIENT_ID` en het Client Secret naar `DISCORD_CLIENT_SECRET`. Een bot of
-bot-permissies zijn voor deze test niet nodig.
+`DISCORD_CLIENT_ID` en het Client Secret naar `DISCORD_CLIENT_SECRET`. Gebruik voor
+`DISCORD_BOT_TOKEN` een server-side bottoken waarmee het actuele guild-lidmaatschap
+voor gevoelige beheerrequests kan worden gecontroleerd; expose dit token nooit aan
+de frontend.
 
 Stel de variabelen in Vercel per environment in. Omdat `DISCORD_REDIRECT_URI` per
 omgeving verschilt, hoort de productie-URI alleen bij Production en een concrete
@@ -73,7 +76,8 @@ standaard in moderne managed Postgres-installaties).
    Production-waarde van `DATABASE_URL` in Vercel in.
 2. Voer op die Production-database migratie 001 en daarna migratie 002 uit.
 3. Stel in Vercel voor Production `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`,
-   `DISCORD_GUILD_ID`, `SESSION_SECRET` en `MOTM_MANAGER_ROLE_IDS` in.
+   `DISCORD_GUILD_ID`, `DISCORD_BOT_TOKEN`, `SESSION_SECRET` en
+   `MOTM_MANAGER_ROLE_IDS` in.
 4. Stel `DISCORD_REDIRECT_URI=https://ajaxpro.fans/api/auth/discord-callback` alleen
    voor Production in en voeg exact die URI toe in het Discord Developer Portal.
 5. Merge pas daarna naar `main`, wacht op een geslaagde Production-deployment en

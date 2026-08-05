@@ -17,6 +17,13 @@ type DiscordGuildMember = {
   roles: string[];
 };
 
+export class DiscordGuildCheckUnavailableError extends Error {
+  constructor() {
+    super("Discord guild membership check unavailable");
+    this.name = "DiscordGuildCheckUnavailableError";
+  }
+}
+
 export type Session = {
   userId: string;
   username: string;
@@ -230,6 +237,29 @@ export const getDiscordGuildMember = (accessToken: string) =>
     `/users/@me/guilds/${encodeURIComponent(requiredEnv("DISCORD_GUILD_ID"))}/member`,
     accessToken,
   );
+
+export const getCurrentDiscordGuildMember = async (userId: string) => {
+  try {
+    const response = await fetch(
+      `${DISCORD_API_BASE}/guilds/${encodeURIComponent(requiredEnv("DISCORD_GUILD_ID"))}/members/${encodeURIComponent(userId)}`,
+      {
+        headers: { Authorization: `Bot ${requiredEnv("DISCORD_BOT_TOKEN")}` },
+        signal: AbortSignal.timeout(10_000),
+      },
+    );
+    if (response.status === 404) return null;
+    if (!response.ok) throw new DiscordGuildCheckUnavailableError();
+
+    const member = (await response.json()) as DiscordGuildMember;
+    if (!Array.isArray(member.roles) || !member.roles.every(roleId => typeof roleId === "string" && Boolean(roleId))) {
+      throw new DiscordGuildCheckUnavailableError();
+    }
+    return member;
+  } catch (error) {
+    if (error instanceof DiscordGuildCheckUnavailableError) throw error;
+    throw new DiscordGuildCheckUnavailableError();
+  }
+};
 
 const avatarUrl = (user: DiscordUser) => {
   if (user.avatar) {
