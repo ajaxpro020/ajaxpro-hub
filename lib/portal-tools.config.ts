@@ -26,7 +26,11 @@ const sectionOrder:Record<ToolSection,number>={team:0,admin:1};
 export const toolsForSession = (session: Session) => portalTools.filter(tool => !tool.requiredPermission || sessionHasPermission(session,tool.requiredPermission)).sort((a,b)=>sectionOrder[a.section]-sectionOrder[b.section]||a.order-b.order);
 export const teamToolsForSession = (session: Session) => toolsForSession(session).filter(tool => tool.section === "team");
 export const adminToolsForSession = (session: Session) => toolsForSession(session).filter(tool => tool.section === "admin");
-export const clubIntroForSession = (_session: Session) => "Stem op de Man of the Match en bekijk de uitslagen.";
+export const clubIntroForSession = (session: Session) => {
+  if(sessionHasPermission(session,permissions.motmManage))return "Stem mee, open je AjaxPro-tools en beheer de Man of the Match.";
+  if(toolsForSession(session).length)return "Stem mee en open je AjaxPro-tools.";
+  return "Stem op de Man of the Match en bekijk de uitslagen.";
+};
 export const sectionTitles: Record<ToolSection,string>={team:"Analistentools",admin:"Beheer"};
 export const renderToolSections = (tools: readonly PortalTool[]) => (["team","admin"] as const).map(section=>{
   const items=tools.filter(tool=>tool.section===section);if(!items.length)return "";

@@ -2,6 +2,7 @@
 .netlify
 .vercel
 node_modules/
+.worktrees/
 
 # Local environment variables and secrets
 .env

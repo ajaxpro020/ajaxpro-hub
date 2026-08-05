@@ -38,14 +38,17 @@ test("spelers met nul stemmen verschijnen niet in de uitslag", () => {
   assert.deepEqual(rankResults([row("a",2),row("b",0)]).map(result=>result.player_id),["a"]);
 });
 
-test("gelijke hoogste score geeft gedeelde winnaars", () => {
+test("gelijke hoogste score kiest de speler met de minste eerdere overwinningen", () => {
   const results=rankResults([row("a",3),row("b",3),row("c",1)]);
-  assert.deepEqual(results.filter(result=>result.rank===1).map(result=>result.player_id),["a","b"]);
+  assert.deepEqual(results.filter(result=>result.rank===1).map(result=>result.player_id),["a"]);
+  const withHistory=rankResults([row("a",3),row("b",3),row("c",1)],new Map([["a",2],["b",0]]));
+  assert.deepEqual(withHistory.filter(result=>result.rank===1).map(result=>result.player_id),["b"]);
 });
 
-test("dense ranking gebruikt opeenvolgende rangposities en maximaal drie posities", () => {
+test("iedere wedstrijd krijgt één unieke top drie, ook bij gelijke stemmen", () => {
   const results=rankResults([row("a",5),row("b",5),row("c",3),row("d",1),row("e",1),row("f",0)]);
-  assert.deepEqual(results.map(result=>result.rank),[1,1,2,3,3]);
+  assert.deepEqual(results.map(result=>result.rank),[1,2,3]);
+  assert.equal(new Set(results.map(result=>result.rank)).size,3);
 });
 
 test("enkelvoud en meervoud worden correct weergegeven", () => {

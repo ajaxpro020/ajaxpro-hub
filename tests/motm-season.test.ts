@@ -14,9 +14,14 @@ test("seizoenkey wisselt correct rond januari en juli",()=>{
   assert.equal(validSeasonKey("2026-27"),true);assert.equal(validSeasonKey("2026/27"),false);
 });
 
-test("stand kent dense 5, 3 en 1 punten toe en negeert nul stemmen",()=>{
+test("stand kent per wedstrijd precies één keer 5, 3 en 1 punten toe en negeert nul stemmen",()=>{
   const {standings}=buildSeasonStandings([match("1",[player("a",5),player("b",5),player("c",3),player("d",1),player("zero",0)])]);
-  assert.deepEqual(standings.map(row=>[row.player_id,row.points]),[["a",5],["b",5],["c",3],["d",1]]);
+  assert.deepEqual(standings.map(row=>[row.player_id,row.points]),[["a",5],["b",3],["c",1]]);
+});
+
+test("gelijke stemmen leveren nooit meerdere spelers met drie punten op",()=>{
+  const {standings}=buildSeasonStandings([match("1",[player("a",2),player("b",1),player("c",1),player("d",1),player("e",1)])]);
+  assert.deepEqual(standings.map(row=>[row.player_id,row.points]),[["a",5],["b",3],["c",1]]);
 });
 
 test("uitgesloten wedstrijden veranderen de gewone uitslag niet maar tellen niet in de stand",()=>{
@@ -29,15 +34,16 @@ test("player_id combineert snapshots en gebruikt de meest recente naam en foto, 
   assert.equal(standings.length,1);assert.equal(standings[0].name_snapshot,"Nieuwste naam");assert.equal(standings[0].points,10);assert.equal(standings[0].matches,2);
 });
 
-test("tie-breakers volgen punten, podiumplaatsen, stemmen, wedstrijden en naam",()=>{
+test("seizoenstand sorteert podiumplaatsen en houdt spelers buiten de unieke top drie puntloos",()=>{
   const {standings}=buildSeasonStandings([match("1",[player("first",4),player("second",3),player("alpha",2),player("beta",2)]),match("2",[player("second",4),player("first",3),player("beta",2),player("alpha",2)])]);
   assert.deepEqual(standings.slice(0,2).map(row=>row.player_id),["first","second"]);
-  assert.deepEqual(standings.slice(2).map(row=>row.player_id),["alpha","beta"]);
+  assert.deepEqual(standings.slice(2).map(row=>row.player_id),["alpha"]);
+  assert.equal(standings.some(row=>row.player_id==="beta"),false);
 });
 
 test("standroute filtert server-side op seizoen, gesloten en niet-verwijderd",()=>{
   const source=readFileSync(new URL("../api/motm/stand.ts",import.meta.url),"utf8");
-  assert.match(source,/m\.season_key=\$\{season\}/);assert.match(source,/m\.status='closed'/);assert.match(source,/m\.deleted_at IS NULL/);assert.match(source,/Telt niet mee voor de stand/);assert.doesNotMatch(source,/season_exclusion_reason/);
+  assert.match(source,/m\.season_key=\$\{season\}/);assert.match(source,/m\.status='closed'/);assert.match(source,/m\.deleted_at IS NULL/);assert.match(source,/Telt niet mee voor de seizoenstand/);assert.doesNotMatch(source,/season_exclusion_reason/);
 });
 
 test("migratie 004 is additive, backfillt en indexeert seizoenvelden",()=>{
