@@ -168,3 +168,16 @@ a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible,s
 .admin-winner-visual canvas{display:block;width:100%;height:auto;aspect-ratio:5/4;border:1px solid rgba(255,255,255,.14);border-radius:16px;background:#20242a}
 .admin-winner-visual [data-download-visual]{margin-top:12px}
 .admin-winner-visual [data-download-visual]:disabled{cursor:wait;opacity:.55}
+
+/* Club v29: show the saved vote prominently on Home and reduce match chrome. */
+.club-spotlight--open.has-vote{gap:var(--space-lg)}
+.club-spotlight--open.has-vote .club-spotlight__match h2{margin:10px 0 4px;font-size:clamp(1.35rem,4vw,1.7rem)}
+.club-spotlight--open.has-vote .club-spotlight__match>p:last-child{font-size:.82rem;line-height:1.45}
+.home-vote-receipt{display:grid;grid-template-columns:84px minmax(0,1fr);min-width:0;min-height:120px;align-items:center;gap:16px;padding:14px 18px 0;border:1px solid rgba(117,229,163,.3);border-radius:var(--radius-lg);background:linear-gradient(145deg,rgba(12,42,31,.72),rgba(10,20,22,.78));overflow:hidden}
+.home-vote-receipt img{align-self:end;width:84px;height:108px;object-fit:contain;object-position:center bottom}
+.home-vote-receipt>div{min-width:0;padding-bottom:14px}
+.home-vote-receipt .eyebrow{margin-bottom:2px;color:var(--success)}
+.home-vote-receipt h3{overflow:hidden;margin:0 0 3px;text-overflow:ellipsis;white-space:nowrap;font-size:clamp(1.35rem,4vw,1.8rem);line-height:1.05}
+.home-vote-receipt strong{color:var(--success);font-size:.82rem}
+@media(max-width:699px){.club-spotlight--open.has-vote{grid-template-columns:1fr}.club-spotlight--open.has-vote .home-vote-receipt,.club-spotlight--open.has-vote .spotlight-actions{grid-column:1}.club-spotlight--open.has-vote .spotlight-actions .button{width:100%}}
+@media(min-width:700px){.club-spotlight--open.has-vote{grid-template-columns:minmax(190px,.7fr) minmax(320px,1.3fr) auto;align-items:center}.club-spotlight--open.has-vote .home-vote-receipt{min-height:132px}.club-spotlight--open.has-vote .home-vote-receipt img{width:94px;height:120px}.club-spotlight--open.has-vote .spotlight-actions{grid-column:auto}.club-spotlight--open.has-vote .spotlight-actions .button{white-space:nowrap}}

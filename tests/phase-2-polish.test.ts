@@ -20,7 +20,7 @@ test("beheer gebruikt afzonderlijke datum- en tijdvelden en geen datetime-local"
 });
 
 test("de Club-renderer gebruikt de actuele stylesheetversie",()=>{
-  const source=read("../lib/motm-view.ts");assert.match(source,/motm\.css\?v=28/);assert.doesNotMatch(source,/motm\.css\?v=27/);
+  const source=read("../lib/motm-view.ts");assert.match(source,/motm\.css\?v=29/);assert.doesNotMatch(source,/motm\.css\?v=28/);
 });
 
 test("ledenresultaten tonen percentages en geen ruwe stemaantallen",()=>{
