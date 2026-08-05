@@ -5,15 +5,16 @@ import { players } from "../data/players";
 
 const byId=(id:string)=>players.find(player=>player.id===id);
 
-test("actieve MOTM-selectie volgt Ajax Life met Ouazane als behouden aanvulling",()=>{
-  assert.equal(players.length,27);
-  assert.equal(new Set(players.map(player=>player.id)).size,27);
+test("actieve MOTM-selectie bevat de actuele unieke spelersgroep",()=>{
+  assert.equal(players.length,28);
+  assert.equal(new Set(players.map(player=>player.id)).size,28);
   assert.equal(byId("heerkens")?.shirtNumber,22);
   assert.equal(byId("brandt")?.shirtNumber,8);
   assert.equal(byId("dies-janse")?.shirtNumber,36);
   assert.equal(byId("arokodare")?.shirtNumber,99);
   assert.equal(byId("bounida")?.position,"Middenvelder");
-  assert.equal(byId("ter-stegen"),undefined);
+  assert.equal(byId("ter-stegen")?.name,"Marc-André ter Stegen");
+  assert.equal(byId("ter-stegen")?.shirtNumber,1);
   assert.equal(byId("ouazane")?.name,"Abdellah Ouazane");
   assert.equal(byId("ouazane")?.shirtNumber,68);
 });

@@ -121,6 +121,36 @@ a {
   text-transform: uppercase;
 }
 
+.next-match-banner__state {
+  display: grid;
+  gap: 1px;
+}
+
+.next-match-banner__state small {
+  color: var(--muted-soft);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+}
+
+.next-match-banner__state strong {
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.045em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.next-match-banner.is-live .next-match-banner__state small,
+.next-match-banner.is-live .next-match-banner__state strong {
+  color: #fff;
+}
+
+.next-match-banner.is-live .next-match-banner__fixture strong {
+  font-size: 1.08rem;
+}
+
 .next-match-banner__live-dot {
   width: 7px;
   height: 7px;
@@ -1340,6 +1370,13 @@ a {
   .lineup-tool-card__player-name {
     display: none;
   }
+
+  .tactic-card__fade,
+  .discord-card__fade,
+  .tool-card__fade {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .content-card h2 {
@@ -1912,6 +1949,33 @@ a {
 .support-strip__action:focus-visible {
   background: var(--red-hover);
   transform: translateY(-1px);
+}
+
+@media (max-width: 759px) {
+  .next-match-banner__inner {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 3px 14px;
+  }
+
+  .next-match-banner__label {
+    grid-row: 1 / 3;
+  }
+
+  .next-match-banner__watch {
+    display: flex;
+    min-width: 0;
+    align-items: baseline;
+    gap: 6px;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .next-match-banner__watch span,
+  .next-match-banner__watch strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 @media (min-width: 760px) {

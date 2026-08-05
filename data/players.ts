@@ -1,6 +1,7 @@
 export type Player = { id: string; name: string; shirtNumber: number | null; position: string; imageUrl: string; active: boolean };
 
 export const players: readonly Player[] = [
+  ["ter-stegen", "Marc-André ter Stegen", 1, "Doelman", "ter-stegen_flight_2627.webp"],
   ["rosa", "Lucas Rosa", 2, "Verdediger", "rosa_2627.png"],
   ["gaaei", "Anton Gaaei", 3, "Verdediger", "gaaei_2627.png"],
   ["itakura", "Ko Itakura", 4, "Verdediger", "itakura_2627.png"],

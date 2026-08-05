@@ -4,17 +4,50 @@ if (nextMatchBanner) {
   const teamsField = nextMatchBanner.querySelector("[data-match-teams]");
   const metaField = nextMatchBanner.querySelector("[data-match-meta]");
   const tvField = nextMatchBanner.querySelector("[data-match-tv]");
+  const stateField = nextMatchBanner.querySelector("[data-match-state]");
+  const clockField = nextMatchBanner.querySelector("[data-match-clock]");
   const cacheKey = "ajaxpro-next-match";
+  let currentPayload;
+  let countdownTimer;
+  let refreshTimer;
+
+  const scheduleRefresh = (delay) => {
+    window.clearTimeout(refreshTimer);
+    refreshTimer = window.setTimeout(loadMatchday, delay);
+  };
+
+  const formatCountdown = (kickoff) => {
+    const remaining = Math.max(0, kickoff.getTime() - Date.now());
+    const totalMinutes = Math.floor(remaining / 60000);
+    const days = Math.floor(totalMinutes / 1440);
+    const hours = Math.floor((totalMinutes % 1440) / 60);
+    const minutes = totalMinutes % 60;
+    return `${String(days).padStart(2, "0")}D ${String(hours).padStart(2, "0")}U ${String(minutes).padStart(2, "0")}M`;
+  };
+
+  const startCountdown = (kickoff) => {
+    window.clearInterval(countdownTimer);
+    const update = () => {
+      clockField.textContent = formatCountdown(kickoff);
+      if (kickoff.getTime() <= Date.now()) {
+        window.clearInterval(countdownTimer);
+        stateField.textContent = "Live";
+        clockField.textContent = "AFTRAP";
+        loadMatchday();
+      }
+    };
+    update();
+    countdownTimer = window.setInterval(update, 1000);
+  };
 
   const renderNextMatch = (payload) => {
     if (!payload?.match) {
-      teamsField.textContent = payload?.message || "Volgende wedstrijd nog niet bekend";
-      metaField.textContent = "Bekijk het programma voor de laatste informatie";
-      tvField.textContent = "Nog niet bekend";
-      nextMatchBanner.classList.add("is-unavailable");
+      window.clearInterval(countdownTimer);
+      nextMatchBanner.hidden = true;
       return;
     }
 
+    currentPayload = payload;
     const kickoff = new Date(payload.match.kickoff);
     const date = new Intl.DateTimeFormat("nl-NL", {
       weekday: "short",
@@ -28,11 +61,46 @@ if (nextMatchBanner) {
       timeZone: "Europe/Amsterdam",
     }).format(kickoff);
 
-    teamsField.textContent = `${payload.match.home} – ${payload.match.away}`;
+    const live = payload.match.mode === "live";
+    teamsField.textContent = live
+      ? `${payload.match.home} ${payload.match.score?.home ?? 0} – ${payload.match.score?.away ?? 0} ${payload.match.away}`
+      : `${payload.match.home} – ${payload.match.away}`;
     metaField.textContent = `${date} · ${time} · ${payload.match.competition}`;
     tvField.textContent = payload.match.tv || "Zender nog niet bekend";
+    nextMatchBanner.hidden = false;
+    nextMatchBanner.classList.toggle("is-live", live);
     nextMatchBanner.classList.remove("is-loading", "is-unavailable");
+    if (live) {
+      window.clearInterval(countdownTimer);
+      stateField.textContent = "Live";
+      clockField.textContent = payload.match.isBreak ? "RUST" : payload.match.minute != null ? `${payload.match.minute}'` : "NU";
+      scheduleRefresh(20000);
+    } else {
+      stateField.textContent = "Aftrap over";
+      startCountdown(kickoff);
+      scheduleRefresh(Math.min(5 * 60000, Math.max(15000, kickoff.getTime() - Date.now())));
+    }
   };
+
+  function loadMatchday() {
+    window.clearTimeout(refreshTimer);
+    return window.fetch("/api/next-match", { headers: { Accept: "application/json" }, cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) throw new Error(`Next match returned ${response.status}`);
+        return response.json();
+      })
+      .then((payload) => {
+        renderNextMatch(payload);
+        window.localStorage.setItem(cacheKey, JSON.stringify(payload));
+      })
+      .catch(() => {
+        if (currentPayload?.match) {
+          scheduleRefresh(currentPayload.match.mode === "live" ? 60000 : 5 * 60000);
+          return;
+        }
+        nextMatchBanner.hidden = true;
+      });
+  }
 
   try {
     const cachedMatch = JSON.parse(window.localStorage.getItem(cacheKey));
@@ -41,22 +109,7 @@ if (nextMatchBanner) {
     window.localStorage.removeItem(cacheKey);
   }
 
-  window
-    .fetch("/api/next-match", { headers: { Accept: "application/json" } })
-    .then((response) => {
-      if (!response.ok) throw new Error(`Next match returned ${response.status}`);
-      return response.json();
-    })
-    .then((payload) => {
-      renderNextMatch(payload);
-      window.localStorage.setItem(cacheKey, JSON.stringify(payload));
-    })
-    .catch(() => {
-      if (!nextMatchBanner.classList.contains("is-loading")) return;
-      renderNextMatch({
-        message: "Wedstrijdinformatie tijdelijk niet beschikbaar",
-      });
-    });
+  loadMatchday();
 }
 
 const youtubeCard = document.querySelector(".youtube-card");
