@@ -23,11 +23,21 @@ test("motm.delete komt uitsluitend uit de aparte Owner/Admin mapping",()=>{
   assert.equal(rolesHavePermission(["1271472085788786718"],permissions.motmDelete),false);
 });
 
+test("media-watch.manage komt uitsluitend uit de aparte Media Watch mapping",()=>{
+  process.env.MEDIA_WATCH_ADMIN_ROLE_IDS="1268471493046566987,1271472085788786718";
+  assert.equal(rolesHavePermission(["1271472085788786718"],permissions.mediaWatchManage),true);
+  assert.equal(rolesHavePermission(["1268471493046566986"],permissions.mediaWatchManage),false);
+  assert.equal(rolesHavePermission(["1271472085788786718"],permissions.motmDelete),false);
+});
+
 test("teamtoolrechten komen alleen uit de centrale environmentmapping",()=>{
   process.env.PORTAL_TEAM_TOOL_ROLE_IDS="333, 444";
   assert.equal(rolesHavePermission(["333"],permissions.toolsTactics),true);
   assert.equal(rolesHavePermission(["444"],permissions.toolsScreenshot),true);
+  assert.equal(rolesHavePermission(["333"],permissions.toolsSocials),true);
+  assert.equal(rolesHavePermission(["333"],permissions.motmDelete),false);
   assert.equal(rolesHavePermission(["222"],permissions.toolsTactics),false);
+  assert.equal(rolesHavePermission(["222"],permissions.toolsSocials),false);
 });
 
 test("onbekende rollen krijgen geen andere aanvullende rechten", () => {

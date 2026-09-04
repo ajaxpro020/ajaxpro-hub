@@ -13,18 +13,18 @@ test("MOTM-homekaart gebruikt een stabiele winnaarvisual zonder geforceerde woor
 });
 
 test("beheer gebruikt afzonderlijke datum- en tijdvelden en geen datetime-local",()=>{
-  const manage=read("../api/motm/manage.ts");
+  const manage=read("../api-impl/motm/manage.ts");
   for(const prefix of ["kickoff","scheduledOpen","scheduledClose"])assert.ok(manage.includes(`dateTimeFields(\"${prefix}\"`));
   assert.match(manage,/\$\{prefix\}Date/);assert.match(manage,/\$\{prefix\}Time/);
   assert.doesNotMatch(manage,/datetime-local/);
 });
 
 test("de Club-renderer gebruikt de actuele stylesheetversie",()=>{
-  const source=read("../lib/motm-view.ts");assert.match(source,/motm\.css\?v=30/);assert.doesNotMatch(source,/motm\.css\?v=29/);
+  const source=read("../lib/motm-view.ts");assert.match(source,/motm\.css\?v=33/);assert.doesNotMatch(source,/motm\.css\?v=31/);
 });
 
 test("ledenresultaten tonen percentages en geen ruwe stemaantallen",()=>{
-  const home=read("../api/club.ts"),result=read("../api/motm/vote.ts"),stand=read("../api/motm/stand.ts");
+  const home=read("../api/club.ts"),result=read("../api-impl/motm/vote.ts"),stand=read("../api-impl/motm/stand.ts");
   assert.doesNotMatch(home,/winner\.votes/);
   assert.doesNotMatch(result,/voteLabel|row\.votes/);
   assert.doesNotMatch(stand,/Uitgebrachte stemmen|<span>Stemmen<\/span>|\(\$\{r\.votes\}\)/);
@@ -33,16 +33,17 @@ test("ledenresultaten tonen percentages en geen ruwe stemaantallen",()=>{
 });
 
 test("stemmen bevestigt de gekozen speler bovenaan en houdt mobiel ruimte vrij",()=>{
-  const vote=read("../api/motm/vote.ts"),css=read("../motm.css");
+  const vote=read("../api-impl/motm/vote.ts"),css=read("../motm.css");
   assert.match(vote,/>Jouw stem</);
   assert.match(vote,/>Stem opgeslagen</);
   assert.match(vote,/ownVote\.image_url_snapshot/);
   assert.doesNotMatch(vote,/Jouw huidige stem:/);
-  assert.match(css,/\.vote-page\{padding-bottom:calc\(var\(--nav-h\) \+ 190px/);
+  assert.match(css,/\.vote-page\{--vote-action-height:calc\(70px \+ env\(safe-area-inset-bottom\)\);padding-bottom:calc\(var\(--vote-action-height\) \+ var\(--space-md\)\)\}/);
+  assert.match(css,/\.vote-page \.sticky-action\{bottom:0;min-height:var\(--vote-action-height\)/);
 });
 
 test("seizoenstand onderscheidt koplopers van de volledige seizoenstand",()=>{
-  const stand=read("../api/motm/stand.ts");
+  const stand=read("../api-impl/motm/stand.ts");
   assert.match(stand,/Koplopers seizoen/);
   assert.match(stand,/Volledige seizoenstand/);
   assert.doesNotMatch(stand,/>Tussenstand</);
@@ -56,7 +57,7 @@ test("seizoenstand onderscheidt koplopers van de volledige seizoenstand",()=>{
 });
 
 test("recente uitslagen tonen de eigen stem met spelersfoto als apart blok",()=>{
-  const overview=read("../api/motm/index.ts"),css=read("../motm.css");
+  const overview=read("../api-impl/motm/index.ts"),css=read("../motm.css");
   assert.match(overview,/own_vote_image/);
   assert.match(overview,/match-row__vote/);
   assert.match(overview,/<small>Jouw stem<\/small>/);
@@ -65,7 +66,7 @@ test("recente uitslagen tonen de eigen stem met spelersfoto als apart blok",()=>
 });
 
 test("gesloten beheer toont automatisch de beheer-only resultaatvisual",()=>{
-  const manage=read("../api/motm/manage.ts");
+  const manage=read("../api-impl/motm/manage.ts");
   assert.match(manage,/createMotmVisualData/);
   assert.match(manage,/data-winner-visual/);
   assert.match(manage,/Download PNG/);
@@ -73,10 +74,10 @@ test("gesloten beheer toont automatisch de beheer-only resultaatvisual",()=>{
 });
 
 test("beheer zet de openbare stemlink direct boven de bewerkstappen",()=>{
-  const manage=read("../api/motm/manage.ts");
+  const manage=read("../api-impl/motm/manage.ts");
   assert.match(manage,/share-primary/);
   assert.match(manage,/Kopieer stemlink/);
-  assert.match(manage,/\$\{share\}\$\{!match\.deleted_at\?liveVotePanel/);
+  assert.match(manage,/\$\{share\}\$\{announcement\}\$\{!match\.deleted_at\?liveVotePanel/);
   assert.match(manage,/1\. Wedstrijdgegevens.*2\. Planning en status.*3\. Spelers.*4\. Stemming verwijderen.*5\. Wijzigingslog/s);
   assert.doesNotMatch(manage,/Verplichte verwijderreden|Typ de tegenstander/);
 });
@@ -123,10 +124,15 @@ test("Home groepeert introductie en verificatie en de stand gebruikt één schei
 });
 
 test("na stemmen staat de gekozen speler bovenaan zonder herhaalde wedstrijdkaart",()=>{
-  const vote=read("../api/motm/vote.ts"),css=read("../motm.css");
+  const vote=read("../api-impl/motm/vote.ts"),css=read("../motm.css");
   assert.match(vote,/vote-page--voted/);
   assert.match(vote,/class="vote-receipt"/);
   assert.match(vote,/<h1>\$\{esc\(ownVote\.name_snapshot\)\}<\/h1>/);
   assert.match(vote,/const openContext=ownVote\?confirmation/);
   assert.match(css,/\.vote-page--voted form>section\{padding-top:0\}/);
+});
+
+test("mobiele stemlijst houdt ruimte vrij onder de vaste bevestigingsknop",()=>{
+  const css=read("../motm.css");
+  assert.match(css,/\.vote-page\{padding-bottom:calc\(var\(--nav-h\) \+ 190px \+ env\(safe-area-inset-bottom\)\)\}/);
 });

@@ -2,9 +2,10 @@ import { isSameOrigin, redirect } from "../../lib/discord-auth";
 import { permissions } from "../../lib/permissions.config";
 import { getSessionWithPermission } from "../../lib/server-permissions";
 import { db, resultsFor } from "../../lib/motm-db";
-import { saveVoteAtomically } from "../../lib/motm-voting";
+import { MOTM_VOTE_RATE_LIMIT_SECONDS, saveVoteAtomically } from "../../lib/motm-voting";
 import { esc, errorPage, formatMoment, matchHeading, matchTitle, page, pageHeader } from "../../lib/motm-view";
 import { synchronizeMatch } from "../../lib/motm-scheduling";
+import { MOTM_VOTE_MAX_BODY_BYTES, MOTM_VOTE_MAX_FORM_FIELDS, readFormDataWithLimits } from "../../lib/request-limits";
 
 const slugOf = (request: Request) => new URL(request.url).searchParams.get("slug")?.trim() ?? "";
 export async function GET(request: Request) {
@@ -36,11 +37,19 @@ export async function POST(request: Request) {
   if (!isSameOrigin(request)) return errorPage("Ongeldige aanvraag", "Ververs de pagina en probeer opnieuw.", 403);
   const session = await getSessionWithPermission(request, permissions.portalAccess);
   if (!session) return redirect(`/api/auth/discord-login?returnTo=${encodeURIComponent(`/club/stemmen/${slugOf(request)}`)}`);
-  const slug = slugOf(request); const form = await request.formData(); const playerId = String(form.get("playerId") ?? "");
+  const slug = slugOf(request);
+  const form = await readFormDataWithLimits(request, { maxBytes: MOTM_VOTE_MAX_BODY_BYTES, maxFields: MOTM_VOTE_MAX_FORM_FIELDS });
+  if (form instanceof Response) return form;
+  const playerId = String(form.get("playerId") ?? "");
   try {
     const result = await saveVoteAtomically(db() as any, slug, session.userId, playerId);
     if (result === "not_found") return errorPage("Stemming niet gevonden", "Controleer de link.", 404);
     if (result === "closed") return errorPage("Stemmen niet mogelijk", "Deze stemming is niet open of de sluitingstijd is bereikt.", 409);
+    if (result === "rate_limited") {
+      const response = errorPage("Even wachten", "Je hebt net gestemd. Probeer het over een paar seconden opnieuw.", 429, session);
+      response.headers.set("Retry-After", String(MOTM_VOTE_RATE_LIMIT_SECONDS));
+      return response;
+    }
     if (result === "invalid_player") return errorPage("Ongeldige speler", "Deze speler hoort niet bij deze wedstrijd.", 400);
     return redirect(`/club/stemmen/${slug}`);
   } catch (error) { console.error("MOTM vote failed", error); return errorPage("Stem niet opgeslagen", "Probeer het over een moment opnieuw.", 503); }

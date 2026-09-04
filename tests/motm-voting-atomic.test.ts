@@ -39,6 +39,8 @@ test("atomische stemquery lockt de wedstrijd en gebruikt de databaseklok", () =>
   assert.match(source, /status = 'open' AND scheduled_close_at > clock_timestamp\(\)/);
   assert.match(source, /SELECT 1[\s\S]*motm_match_players/);
   assert.match(source, /ON CONFLICT\(match_id, voter_discord_user_id\)/);
+  assert.match(source, /motm_vote_rate_limits/);
+  assert.match(source, /MOTM_VOTE_RATE_LIMIT_SECONDS/);
 });
 
 test("een normale geldige stem wordt opgeslagen", async () => {
@@ -80,7 +82,57 @@ test("parallelle stemrequests rond sluiting accepteren niets na de sluittransact
 });
 
 test("de POST-route vertaalt een gesloten transactie naar 409", () => {
-  const source = readFileSync(new URL("../api/motm/vote.ts", import.meta.url), "utf8");
+  const source = readFileSync(new URL("../api-impl/motm/vote.ts", import.meta.url), "utf8");
   assert.match(source, /result === "closed"[\s\S]*409/);
   assert.doesNotMatch(source, /const now = new Date\(\)[\s\S]*canVoteAt/);
+});
+
+test("de POST-route vertaalt een te snelle stem naar 429", () => {
+  const source = readFileSync(new URL("../api-impl/motm/vote.ts", import.meta.url), "utf8");
+  assert.match(source, /result === "rate_limited"[\s\S]*429/);
+  assert.match(source, /Retry-After/);
+});
+
+test("de rate limit is per wedstrijd en Discord-gebruiker en staat database-atomisch", () => {
+  const source = readFileSync(new URL("../lib/motm-voting.ts", import.meta.url), "utf8");
+  assert.match(source, /PRIMARY KEY \(match_id, voter_discord_user_id\)|ON CONFLICT\(match_id, voter_discord_user_id\)/);
+  assert.match(source, /WHERE motm_vote_rate_limits\.last_attempt_at <= clock_timestamp\(\)/);
+  assert.match(source, /RETURNING 1/);
+});
+
+test("rate-limitgedrag laat normale stemmen, wijzigingen en verschillende sleutels toe", async () => {
+  const intervalMs = 5_000;
+  const lastAttempt = new Map<string, number>();
+  const allow = (matchId: string, userId: string, now: number) => {
+    const key = `${matchId}:${userId}`;
+    const previous = lastAttempt.get(key);
+    if (previous !== undefined && now - previous < intervalMs) return false;
+    lastAttempt.set(key, now);
+    return true;
+  };
+
+  assert.equal(allow("match-a", "user-a", 1_000), true, "eerste stem mag door");
+  assert.equal(allow("match-a", "user-a", 1_001), false, "snelle wijziging wordt beperkt");
+  assert.equal(allow("match-a", "user-a", 6_000), true, "normale latere wijziging mag door");
+  assert.equal(allow("match-a", "user-b", 1_001), true, "andere gebruiker heeft een eigen limiet");
+  assert.equal(allow("match-b", "user-a", 1_001), true, "andere wedstrijd heeft een eigen limiet");
+});
+
+test("gelijktijdige limiterchecks voor dezelfde gebruiker en wedstrijd accepteren er maximaal één", async () => {
+  let lastAttempt: number | undefined;
+  const consume = async (now: number) => {
+    await Promise.resolve();
+    if (lastAttempt !== undefined && now - lastAttempt < 5_000) return false;
+    lastAttempt = now;
+    return true;
+  };
+  const results = await Promise.all([consume(1_000), consume(1_000)]);
+  assert.deepEqual(results.sort(), [false, true]);
+});
+
+test("MOTM-stemroute gebruikt een harde body- en field-limiet vóór bestaande validatie", () => {
+  const source = readFileSync(new URL("../api-impl/motm/vote.ts", import.meta.url), "utf8");
+  assert.match(source, /readFormDataWithLimits/);
+  assert.match(source, /MOTM_VOTE_MAX_BODY_BYTES/);
+  assert.match(source, /MOTM_VOTE_MAX_FORM_FIELDS/);
 });

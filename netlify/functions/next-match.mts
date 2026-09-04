@@ -62,13 +62,18 @@ export const parseAjaxFixtures = (html: string) => {
         item.match(/class="matches-block__date">([\s\S]*?)<\/span>/)?.[1] ?? "",
       );
       const kickoff = parseAjaxDate(dateText);
-      const teamNames = [
+      const participantText = cleanText(
+        item.match(/class="matches-block__participants[^>]*>([\s\S]*)<\/span>\s*<\/div>/)?.[1] ?? "",
+      );
+      const participantNames = participantText.split(/\s+[–-]\s+/).map(cleanText).filter(Boolean);
+      const logoNames = [
         ...new Set(
           [...item.matchAll(/<img[^>]+alt="([^"]+)"[^>]*>/g)]
             .map((match) => cleanText(match[1]))
             .filter(Boolean),
         ),
       ];
+      const teamNames = participantNames.length === 2 ? participantNames : logoNames;
       const [home, away] = teamNames;
 
       if (!kickoff || !home || !away || (home !== "Ajax" && away !== "Ajax")) return null;

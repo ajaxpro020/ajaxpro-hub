@@ -11,7 +11,7 @@ export const synchronizeMatch = async <T extends SchedulableMatch & { id: string
       opened_at=CASE WHEN ${status}='open' THEN COALESCE(opened_at,${now}) WHEN ${status}='closed' THEN COALESCE(opened_at,scheduled_open_at,${now}) ELSE opened_at END,
       closed_at=CASE WHEN ${status}='closed' THEN COALESCE(closed_at,${now}) ELSE closed_at END
       WHERE id=${match.id} AND status=${match.status} AND deleted_at IS NULL RETURNING *`;
-    if(row)await tx`INSERT INTO motm_audit_log(match_id,actor_discord_user_id,actor_username_snapshot,action,before_data,after_data) VALUES(${match.id},'system','Automatische planning',${tx.json({status:match.status})},${tx.json({status,summary:status==='closed'?'Automatisch gesloten':'Automatisch geopend'})})`;
+    if(row)await tx`INSERT INTO motm_audit_log(match_id,actor_discord_user_id,actor_username_snapshot,action,before_data,after_data) VALUES(${match.id},'system','Automatische planning','status_synchronized',${tx.json({status:match.status})},${tx.json({status,summary:status==='closed'?'Automatisch gesloten':'Automatisch geopend'})})`;
     return row;
   });
   return (updated ?? { ...match, status }) as T;

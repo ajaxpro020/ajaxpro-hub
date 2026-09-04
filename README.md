@@ -47,9 +47,10 @@ database die vanuit Vercel bereikbaar is (bijvoorbeeld Neon of Vercel Postgres).
 Voeg in het Discord Developer Portal bij **OAuth2 → Redirects** elke gebruikte URI
 exact toe. Kopieer onder **General Information** de Application ID naar
 `DISCORD_CLIENT_ID` en het Client Secret naar `DISCORD_CLIENT_SECRET`. Gebruik voor
-`DISCORD_BOT_TOKEN` een server-side bottoken waarmee het actuele guild-lidmaatschap
-voor gevoelige beheerrequests kan worden gecontroleerd; expose dit token nooit aan
-de frontend.
+`DISCORD_BOT_TOKEN` de raw token van de bestaande AjaxPro Login-bot; deze wordt
+uitsluitend server-side gebruikt om gevoelige beheerrollen maximaal iedere vijftien
+minuten opnieuw bij Discord te controleren. Gewone portalsessies blijven acht uur
+geldig; beheerrechten zijn daarnaast beperkt tot het eerste uur na de Discord-login.
 
 Stel de variabelen in Vercel per environment in. Omdat `DISCORD_REDIRECT_URI` per
 omgeving verschilt, hoort de productie-URI alleen bij Production en een concrete

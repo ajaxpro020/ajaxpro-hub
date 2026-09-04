@@ -7,11 +7,12 @@ process.env.PORTAL_TEAM_TOOL_ROLE_IDS=roles.analyst;
 const member={username:"Ajacied",avatarUrl:"https://cdn.discordapp.com/avatar.png",discordRoleIds:[]};
 const analyst={...member,discordRoleIds:[roles.analyst]};
 
-test("de Club-shell voor een gewoon lid bevat Home, Stemmen en Stand maar geen Tools",async()=>{
+test("een gewoon lid ziet MOTM maar geen Tools",async()=>{
   const html=await page("Stemmen","<main>Inhoud</main>","",member,"motm").text();
   assert.match(html,/href="\/club"/);
   assert.match(html,/href="\/club\/motm" class="active" aria-current="page"/);
-  assert.match(html,/href="\/club\/stand"/);
+  assert.match(html,/>MOTM<\/a>/);
+  assert.match(html,/aria-label="MOTM-navigatie"[\s\S]*href="\/club\/stand"/);
   assert.doesNotMatch(html,/href="\/club\/tools"/);
   assert.match(html,/Ajacied/);
   assert.match(html,/action="\/api\/auth\/logout"/);
@@ -22,7 +23,7 @@ test("de Club-shell toont Tools alleen met een intern toolrecht",async()=>{
   assert.match(html,/href="\/club\/tools" class="active" aria-current="page"/);
   assert.match(html,/>Tools<\/a>/);
   assert.doesNotMatch(html,/>Analistentools<\/a>|>Teamtools<\/a>/);
-  assert.equal((html.match(/class="mobile-nav"/g)??[]).length,1);
+  assert.equal((html.match(/class="mobile-menu"/g)??[]).length,1);
   assert.equal((html.match(/class="desktop-nav"/g)??[]).length,1);
 });
 
@@ -41,7 +42,21 @@ test("de Tools-403 gebruikt Home en markeert Stemmen niet actief",async()=>{
   assert.doesNotMatch(html,/href="\/club\/motm" class="active"/);
 });
 
-test("Club- en MOTM-pagina's laden stylesheetversie 30",async()=>{
+test("Club- en MOTM-pagina's laden stylesheetversie 33 en het mobiele menuscript",async()=>{
   const html=await page("Club","<main>Inhoud</main>","",member,"home").text();
-  assert.match(html,/\/motm\.css\?v=30/);
+  assert.match(html,/\/motm\.css\?v=33/);
+  assert.match(html,/\/portal-nav\.js/);
+});
+
+test("de gedeelde Club-shell kan een afgeschermde tool een eigen stylesheet geven",async()=>{
+  const html=await page("Socials","<main>Socials</main>","",analyst,"tools",undefined,{stylesheets:["/socials.css"]}).text();
+  assert.match(html,/href="\/socials\.css"/);
+  assert.match(html,/href="\/club\/tools" class="active"/);
+});
+
+test("een tool kan blob-afbeeldingen toestaan zonder MOTM-pagina's te verruimen",async()=>{
+  const socials=page("Socials","<main>Socials</main>","",analyst,"tools",undefined,{imageSources:["blob:"]});
+  const motm=page("MOTM","<main>MOTM</main>","",analyst,"motm");
+  assert.match(socials.headers.get("content-security-policy")??"",/img-src 'self' https:\/\/cdn\.discordapp\.com blob:/);
+  assert.doesNotMatch(motm.headers.get("content-security-policy")??"",/img-src[^;]*blob:/);
 });

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { internalVotePath, renderPublicNotFound, renderPublicShare, shareMetadata, type PublicMatch } from "../lib/motm-share";
-import { renderCurrentPublicShare, type ShareMatch } from "../api/motm/share";
+import { renderCurrentPublicShare, type ShareMatch } from "../api-impl/motm/share";
 import { statusAt } from "../lib/motm-rules";
 
 const match=(status:PublicMatch["status"]):PublicMatch=>({slug:"fc-volendam-2026-08-02-494eca",opponent:"FC Volendam",competition:"Eredivisie",kickoff_at:"2026-08-02T12:30:00Z",home_or_away:"home",status});

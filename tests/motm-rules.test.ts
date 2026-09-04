@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { amsterdamFieldsToUtc, canVoteAt, rankResults, statusAt, toAmsterdamFields, voteLabel, winnerLabel } from "../lib/motm-rules";
+import { amsterdamFieldsToUtc, canVoteAt, defaultSchedule, rankResults, statusAt, toAmsterdamFields, voteLabel, winnerLabel } from "../lib/motm-rules";
 
 const openAt = "2026-08-01T20:00:00.000Z";
 const closeAt = "2026-08-02T20:00:00.000Z";
+test("standaard MOTM-sluiting valt uiterlijk drie uur na aftrap",()=>{const schedule=defaultSchedule(new Date("2026-08-01T18:00:00Z"));assert.equal(schedule.closeAt.toISOString(),"2026-08-01T21:00:00.000Z");});
 const match = (status: "draft"|"open"|"closed") => ({ status, scheduled_open_at: openAt, scheduled_close_at: closeAt });
 
 test("concept vóór scheduled_open_at blijft Concept", () => {

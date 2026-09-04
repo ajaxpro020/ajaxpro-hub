@@ -1,4 +1,4 @@
-import { DiscordGuildCheckUnavailableError, getCurrentDiscordGuildMember, readSession, type Session } from "./discord-auth";
+import { getDiscordGuildMemberRoles, readSession, type Session } from "./discord-auth";
 import {
   defaultMemberPermissions,
   permissions,
@@ -6,21 +6,23 @@ import {
   rolesHavePermission,
 } from "./permissions.config";
 
-export const MANAGEMENT_ROLE_MAX_AGE_MS = 15 * 60 * 1000;
+export const MANAGEMENT_SESSION_MAX_AGE_SECONDS = 60 * 60;
+export const MANAGEMENT_PERMISSION_CACHE_SECONDS = 15 * 60;
 const managementPermissions = new Set<Permission>([
   permissions.adminManage,
   permissions.motmManage,
   permissions.motmDelete,
+  permissions.mediaWatchManage,
 ]);
-type RoleCheck = { roleIds: string[]; checkedAt: number };
-const roleChecks = new Map<string, RoleCheck>();
-
 type AuthorizationOptions = {
-  now?: number;
-  loadMember?: (userId: string) => Promise<{ roles: string[] } | null>;
+  nowSeconds?: number;
+  fetchRoles?: (userId: string) => Promise<readonly string[]>;
 };
 
-export const clearManagementRoleCache = () => roleChecks.clear();
+type PermissionCacheEntry = { roleIds: readonly string[]; checkedAt: number };
+const managementPermissionCache = new Map<string, PermissionCacheEntry>();
+
+export const clearManagementPermissionCache = () => managementPermissionCache.clear();
 
 export const authorizeSessionPermission = async (
   session: Session,
@@ -31,30 +33,36 @@ export const authorizeSessionPermission = async (
     return defaultMemberPermissions.includes(permission) || rolesHavePermission(session.discordRoleIds, permission) ? session : null;
   }
 
-  const now = options.now ?? Date.now();
-  let check = roleChecks.get(session.userId);
-  if (!check || now - check.checkedAt >= MANAGEMENT_ROLE_MAX_AGE_MS) {
-    let member: { roles: string[] } | null;
-    try {
-      member = await (options.loadMember ?? getCurrentDiscordGuildMember)(session.userId);
-    } catch (error) {
-      if (error instanceof DiscordGuildCheckUnavailableError) throw error;
-      throw new DiscordGuildCheckUnavailableError();
-    }
-    if (!member) {
-      roleChecks.delete(session.userId);
-      return null;
-    }
-    check = { roleIds: [...member.roles], checkedAt: now };
-    roleChecks.set(session.userId, check);
-  }
-
-  const currentSession = { ...session, discordRoleIds: [...check.roleIds] };
-  return rolesHavePermission(currentSession.discordRoleIds, permission) ? currentSession : null;
+  const now = options.nowSeconds ?? Math.floor(Date.now() / 1000);
+  const managementSessionAge = now - session.issuedAt;
+  if (!Number.isFinite(session.issuedAt) || managementSessionAge < 0 || managementSessionAge >= MANAGEMENT_SESSION_MAX_AGE_SECONDS) return null;
+  const cacheKey = `${session.userId}:${session.issuedAt}:${session.discordRoleIds.join(",")}`;
+  const cached = managementPermissionCache.get(cacheKey);
+  const roleIds = cached && now - cached.checkedAt < MANAGEMENT_PERMISSION_CACHE_SECONDS
+    ? cached.roleIds
+    : cached
+      ? await refreshManagementRoles(cacheKey, session.userId, now, options.fetchRoles)
+      : session.issuedAt + MANAGEMENT_PERMISSION_CACHE_SECONDS > now
+        ? (managementPermissionCache.set(cacheKey, { roleIds: session.discordRoleIds, checkedAt: session.issuedAt }), session.discordRoleIds)
+        : await refreshManagementRoles(cacheKey, session.userId, now, options.fetchRoles);
+  return roleIds && rolesHavePermission(roleIds, permission) ? session : null;
 };
 
-export const isDiscordAuthorizationUnavailable = (error: unknown) =>
-  error instanceof DiscordGuildCheckUnavailableError;
+const refreshManagementRoles = async (
+  cacheKey: string,
+  userId: string,
+  now: number,
+  fetchRoles: (userId: string) => Promise<readonly string[]> = async (userId) => getDiscordGuildMemberRoles(userId),
+): Promise<readonly string[] | null> => {
+  try {
+    const roleIds = await fetchRoles(userId);
+    managementPermissionCache.set(cacheKey, { roleIds: [...roleIds], checkedAt: now });
+    return roleIds;
+  } catch {
+    managementPermissionCache.delete(cacheKey);
+    return null;
+  }
+};
 
 export const getSessionWithPermission = async (
   request: Request,

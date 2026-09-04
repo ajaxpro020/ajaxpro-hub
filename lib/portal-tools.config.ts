@@ -19,6 +19,8 @@ export type PortalTool = {
 export const portalTools: readonly PortalTool[] = [
   {id:"tactics",title:"Tactiekbord",description:"Werk wedstrijdideeën uit op het digitale tactiekbord.",href:"https://ajaxpro-tactics-board.vercel.app",section:"team",external:true,requiredPermission:permissions.toolsTactics,order:10},
   {id:"screenshot",title:"Screenshot Editor",description:"Maak screenshots klaar voor AjaxPro-publicaties.",href:"https://screenshot-bewerker.vercel.app",section:"team",external:true,requiredPermission:permissions.toolsScreenshot,order:20},
+  {id:"socials",title:"Socials",description:"Maak vaste AjaxPro-formats klaar voor social media.",href:"/club/tools/socials",section:"team",external:false,requiredPermission:permissions.toolsSocials,order:30},
+  {id:"media-watch",title:"Media Watch",description:"Leg journalistieke bronnen over Ajax zorgvuldig vast.",href:"/club/tools/media-watch",section:"admin",external:false,requiredPermission:permissions.mediaWatchManage,order:20},
   {id:"motm-admin",title:"MOTM-stemmingen beheren",description:"Plan, open en beheer Man of the Match-stemmingen.",href:"/club/motm/beheer",section:"admin",external:false,requiredPermission:permissions.motmManage,order:10},
 ];
 

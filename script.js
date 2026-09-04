@@ -1,5 +1,18 @@
 const nextMatchBanner = document.querySelector("[data-next-match]");
 
+const homeProgram = document.querySelector("[data-home-program]");
+if (homeProgram) {
+  window.fetch("/api/next-match?view=program", { headers: { Accept: "application/json" } })
+    .then((response) => response.ok ? response.json() : Promise.reject())
+    .then((payload) => {
+      const upcoming = payload.fixtures?.slice(0, 3) || [];
+      homeProgram.textContent = upcoming.length
+        ? `${upcoming.length} komende ${upcoming.length === 1 ? "wedstrijd" : "wedstrijden"} bekijken`
+        : "Het programma wordt binnenkort bekendgemaakt.";
+    })
+    .catch(() => { homeProgram.textContent = "Bekijk het actuele programma."; });
+}
+
 if (nextMatchBanner) {
   const teamsField = nextMatchBanner.querySelector("[data-match-teams]");
   const metaField = nextMatchBanner.querySelector("[data-match-meta]");
@@ -261,3 +274,102 @@ if (discordTransferCard) {
   discordTransferCard.addEventListener("mouseleave", clearChat);
   discordTransferCard.addEventListener("blur", clearChat);
 }
+
+const faqItems = document.querySelectorAll(".faq details");
+
+faqItems.forEach((details) => {
+  const summary = details.querySelector("summary");
+  const answer = details.querySelector("p");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  let targetOpen = details.open;
+  let detailsAnimation;
+  let answerAnimation;
+  let keyboardTriggered = false;
+
+  if (!summary || !answer) {
+    return;
+  }
+
+  summary.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      keyboardTriggered = true;
+    }
+  });
+
+  summary.addEventListener("click", (event) => {
+    event.preventDefault();
+    targetOpen = !targetOpen;
+    detailsAnimation?.cancel();
+    answerAnimation?.cancel();
+
+    if (keyboardTriggered) {
+      keyboardTriggered = false;
+      details.classList.add("is-keyboard-toggle");
+      details.style.removeProperty("overflow");
+      details.open = targetOpen;
+      window.requestAnimationFrame(() => {
+        details.classList.remove("is-keyboard-toggle");
+      });
+      return;
+    }
+
+    const startHeight = details.getBoundingClientRect().height;
+
+    if (targetOpen) {
+      details.open = true;
+    }
+
+    const duration = reduceMotion.matches ? 100 : targetOpen ? 220 : 180;
+    const translateY = reduceMotion.matches ? "0" : "-8px";
+    const frames = targetOpen
+      ? [
+          { opacity: 0, transform: `translateY(${translateY})` },
+          { opacity: 1, transform: "translateY(0)" },
+        ]
+      : [
+          { opacity: 1, transform: "translateY(0)" },
+          { opacity: 0, transform: `translateY(${translateY})` },
+        ];
+
+    answerAnimation = answer.animate(frames, {
+      duration,
+      easing: "cubic-bezier(0.23, 1, 0.32, 1)",
+    });
+
+    if (!reduceMotion.matches) {
+      const borderWidth = Number.parseFloat(getComputedStyle(details).borderBottomWidth) || 0;
+      const endHeight = targetOpen
+        ? details.getBoundingClientRect().height
+        : summary.getBoundingClientRect().height + borderWidth;
+
+      details.style.overflow = "hidden";
+      detailsAnimation = details.animate(
+        [{ height: `${startHeight}px` }, { height: `${endHeight}px` }],
+        {
+          duration,
+          easing: "cubic-bezier(0.23, 1, 0.32, 1)",
+        },
+      );
+
+      const currentDetailsAnimation = detailsAnimation;
+      currentDetailsAnimation.addEventListener("finish", () => {
+        if (detailsAnimation !== currentDetailsAnimation) {
+          return;
+        }
+
+        if (!targetOpen) {
+          details.open = false;
+        }
+        details.style.removeProperty("overflow");
+        detailsAnimation = undefined;
+      });
+    }
+
+    answerAnimation.addEventListener("finish", () => {
+      if (reduceMotion.matches && !targetOpen) {
+        details.open = false;
+      }
+      answerAnimation = undefined;
+    });
+  });
+});

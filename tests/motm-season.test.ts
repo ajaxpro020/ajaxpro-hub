@@ -42,7 +42,7 @@ test("seizoenstand sorteert podiumplaatsen en houdt spelers buiten de unieke top
 });
 
 test("standroute filtert server-side op seizoen, gesloten en niet-verwijderd",()=>{
-  const source=readFileSync(new URL("../api/motm/stand.ts",import.meta.url),"utf8");
+  const source=readFileSync(new URL("../api-impl/motm/stand.ts",import.meta.url),"utf8");
   assert.match(source,/m\.season_key=\$\{season\}/);assert.match(source,/m\.status='closed'/);assert.match(source,/m\.deleted_at IS NULL/);assert.match(source,/Telt niet mee voor de seizoenstand/);assert.doesNotMatch(source,/season_exclusion_reason/);
 });
 

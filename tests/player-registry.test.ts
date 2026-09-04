@@ -1,0 +1,89 @@
+import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+import test from "node:test";
+import { GET } from "../api/motm-public";
+
+const read=(path:string)=>readFileSync(new URL(path,import.meta.url),"utf8");
+
+test("centrale spelersregistratie voedt MOTM, Socials, contracten en lineup maker",()=>{
+  const migration=read("../db/migrations/012_player_registry.sql");
+  const motm=read("../api-impl/motm/manage.ts");
+  const socials=read("../api-impl/socials/index.ts");
+  const contracts=read("../contracten-ui.js");
+  const lineup=read("../../opstelling-maker/script.js");
+  assert.match(migration,/CREATE TABLE IF NOT EXISTS ajax_players/);
+  assert.match(motm,/activePlayersFromDatabase/);
+  assert.match(socials,/loadPlayers/);
+  assert.match(contracts,/\/api\/players\?include=contracts/);
+  assert.match(contracts,/!player\.active&&player\.loanClub/);
+  assert.match(lineup,/https:\/\/ajaxpro\.fans\/api\/players/);
+  assert.match(lineup,/const photo=current\.photo\|\|centralPhoto/);
+});
+
+test("huurafspraken zijn centraal opgeslagen en transparant gelabeld",()=>{
+  const migration=read("../db/migrations/017_add_loan_deal_details.sql");
+  const registry=read("../lib/player-registry.ts");
+  const contracts=read("../contracten-ui.js");
+  const contractsHtml=read("../contracten.html");
+  assert.match(migration,/ADD COLUMN IF NOT EXISTS loan_deal JSONB/);
+  assert.match(migration,/"status": "reported"/);
+  assert.match(registry,/loanDeal:mapLoanDeal\(row\.loan_deal\)/);
+  assert.match(contracts,/Huurconstructie/);
+  assert.match(contracts,/Niet bevestigd/);
+  assert.match(contracts,/contract-card__facts/);
+  assert.match(contractsHtml,/loan-deal__status--confirmed/);
+  assert.match(contractsHtml,/loan-deal__status--reported/);
+  assert.doesNotMatch(contractsHtml,/Nog in te vullen/);
+  assert.match(contractsHtml,/Tijdelijk elders<\/dt><dd>8 spelers/);
+  assert.match(contractsHtml,/href="\.\/contracten\.css\?v=/);
+  assert.match(contractsHtml,/src="\.\/contracten-ui\.js\?v=/);
+  assert.doesNotMatch(contractsHtml,/(?:href|src)="\/(?:styles|contracten|assets|Favicon)/);
+});
+
+test("deadline day-mutaties worden via de centrale spelersregistratie uitgerold",()=>{
+  const migration=read("../db/migrations/027_transfer_deadline_selection_update.sql");
+  assert.match(migration,/'kehrer', 'Thilo Kehrer'/);
+  assert.match(migration,/'adingra', 'Simon Adingra'/);
+  assert.match(migration,/loan_club = 'Werder Bremen'/);
+  assert.match(migration,/loan_club = 'FC Kopenhagen'/);
+  assert.match(migration,/loan_club = 'De Graafschap'/);
+  assert.match(migration,/loan_club = 'Lommel SK'/);
+  assert.match(migration,/WHERE id = 'van-de-pavert'/);
+  assert.match(migration,/contract_end = '2029-06-30' WHERE id = 'dies-janse'/);
+});
+
+test("spelersendpoint blijft onderdeel van de bestaande MOTM-serverless functie",()=>{
+  const config=JSON.parse(read("../vercel.json"));
+  const route=config.rewrites.find((rewrite:any)=>rewrite.source==="/api/players");
+  assert.equal(route.destination,"/api/motm-public?action=players");
+  assert.equal(existsSync(new URL("../api/players.ts",import.meta.url)),false);
+});
+
+test("historische MOTM-wedstrijden blijven snapshots gebruiken",()=>{
+  const schema=read("../db/migrations/001_motm.sql");
+  assert.match(schema,/name_snapshot TEXT NOT NULL/);
+  assert.match(schema,/image_url_snapshot TEXT NOT NULL/);
+});
+
+test("publieke spelersendpoint levert alleen actieve spelers en beperkte CORS",async()=>{
+  const response=await GET(new Request("https://ajaxpro.fans/api/motm-public?action=players",{headers:{Origin:"https://opstelling.ajaxpro.fans"}}));
+  const payload=await response.json();
+  assert.equal(response.status,200);
+  assert.equal(response.headers.get("Access-Control-Allow-Origin"),"https://opstelling.ajaxpro.fans");
+  assert.equal(payload.players.length,27);
+  assert.equal(payload.players.some((player:any)=>player.id==="amrabat"),true);
+  assert.equal(payload.players.some((player:any)=>player.id==="tsygankov"),true);
+  assert.equal(payload.players.some((player:any)=>player.id==="kehrer"),true);
+  assert.equal(payload.players.some((player:any)=>player.id==="adingra"),true);
+  assert.equal(payload.players.some((player:any)=>player.id==="godts"),false);
+  assert.equal(payload.players.some((player:any)=>player.id==="dies-janse"),true);
+  assert.equal(payload.players.some((player:any)=>player.id==="ouazane"),true);
+  assert.equal(payload.players.some((player:any)=>player.id==="jofre-torrents"),true);
+  assert.equal(payload.players.some((player:any)=>player.id==="konadu"),false);
+  assert.equal(payload.players.some((player:any)=>player.id==="sutalo"),false);
+  assert.equal(payload.players.some((player:any)=>player.id==="itakura"),false);
+  assert.equal(payload.players.some((player:any)=>player.id==="regeer"),false);
+  assert.equal(payload.players.some((player:any)=>player.id==="carrizo"),false);
+  const denied=await GET(new Request("https://ajaxpro.fans/api/motm-public?action=players",{headers:{Origin:"https://example.com"}}));
+  assert.equal(denied.headers.has("Access-Control-Allow-Origin"),false);
+});

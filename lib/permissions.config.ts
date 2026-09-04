@@ -3,9 +3,11 @@ export const permissions = {
   toolsLineup: "tools.lineup",
   toolsTactics: "tools.tactics",
   toolsScreenshot: "tools.screenshot",
+  toolsSocials: "tools.socials",
   adminManage: "admin.manage",
   motmManage: "motm.manage",
   motmDelete: "motm.delete",
+  mediaWatchManage: "media-watch.manage",
 } as const;
 
 export type Permission = (typeof permissions)[keyof typeof permissions];
@@ -33,7 +35,11 @@ export const rolesHavePermission = (
     const allowed = idsFromEnv("MOTM_DELETE_ROLE_IDS");
     return roleIds.some(roleId => allowed.has(roleId));
   }
-  if (permission === permissions.toolsTactics || permission === permissions.toolsScreenshot) {
+  if (permission === permissions.mediaWatchManage) {
+    const allowed = idsFromEnv("MEDIA_WATCH_ADMIN_ROLE_IDS");
+    return roleIds.some(roleId => allowed.has(roleId));
+  }
+  if (permission === permissions.toolsTactics || permission === permissions.toolsScreenshot || permission === permissions.toolsSocials) {
     const allowed = idsFromEnv("PORTAL_TEAM_TOOL_ROLE_IDS");
     return roleIds.some(roleId => allowed.has(roleId));
   }

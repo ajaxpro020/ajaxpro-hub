@@ -4,29 +4,117 @@
   "functions": {
     "api/next-match.ts": {
       "maxDuration": 15
+    },
+    "api/media-watch-daily.ts": {
+      "maxDuration": 300
     }
   },
+  "crons": [
+    {
+      "path": "/api/next-match?view=program",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/media-watch-daily",
+      "schedule": "20 4 * * *"
+    }
+  ],
   "rewrites": [
+    {
+      "source": "/programma",
+      "destination": "/programma.html"
+    },
     {
       "source": "/club",
       "destination": "/api/club"
     },
-    { "source": "/club/motm", "destination": "/api/motm/index" },
-    { "source": "/club/tools", "destination": "/api/club-tools" },
-    { "source": "/club/stand", "destination": "/api/motm/stand" },
-    { "source": "/club/stemmen/:slug", "destination": "/api/motm/vote?slug=:slug" },
-    { "source": "/stem/:slug", "destination": "/api/motm/share?slug=:slug" },
-    { "source": "/club/motm/beheer", "destination": "/api/motm/manage?view=list" },
-    { "source": "/club/motm/nieuw", "destination": "/api/motm/manage?view=new" },
-    { "source": "/club/motm/beheer/:id", "destination": "/api/motm/manage?view=detail&id=:id" },
-    { "source": "/club/motm/beheer/:id/live", "destination": "/api/motm/manage?view=live&id=:id" },
-    { "source": "/motm-visual-test", "destination": "/api/motm-visual-test" },
+    {
+      "source": "/api/motm",
+      "destination": "/api/motm-public?action=index"
+    },
+    {
+      "source": "/api/motm/index",
+      "destination": "/api/motm-public?action=index"
+    },
+    {
+      "source": "/api/motm/vote",
+      "destination": "/api/motm-public?action=vote"
+    },
+    {
+      "source": "/api/motm/stand",
+      "destination": "/api/motm-public?action=stand"
+    },
+    {
+      "source": "/api/motm/share",
+      "destination": "/api/motm-public?action=share"
+    },
+    {
+      "source": "/api/players",
+      "destination": "/api/motm-public?action=players"
+    },
+    {
+      "source": "/api/motm/manage",
+      "destination": "/api/motm-manage"
+    },
+    {
+      "source": "/club/motm",
+      "destination": "/api/motm-public?action=index"
+    },
+    {
+      "source": "/club/tools",
+      "destination": "/api/club-tools"
+    },
+    {
+      "source": "/club/tools/socials",
+      "destination": "/api/club-tools?view=socials"
+    },
+    {
+      "source": "/club/tools/media-watch",
+      "destination": "/api/club-tools?view=media-watch"
+    },
+    {
+      "source": "/club/stand",
+      "destination": "/api/motm-public?action=stand"
+    },
+    {
+      "source": "/club/stemmen/:slug",
+      "destination": "/api/motm-public?action=vote&slug=:slug"
+    },
+    {
+      "source": "/stem/:slug",
+      "destination": "/api/motm-public?action=share&slug=:slug"
+    },
+    {
+      "source": "/club/motm/beheer",
+      "destination": "/api/motm-manage?view=list"
+    },
+    {
+      "source": "/club/motm/nieuw",
+      "destination": "/api/motm-manage?view=new"
+    },
+    {
+      "source": "/club/motm/beheer/:id",
+      "destination": "/api/motm-manage?view=detail&id=:id"
+    },
+    {
+      "source": "/club/motm/beheer/:id/live",
+      "destination": "/api/motm-manage?view=live&id=:id"
+    },
     {
       "source": "/geen-toegang",
       "destination": "/geen-toegang.html"
     }
   ],
   "headers": [
+    {
+      "source": "/assets/players/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    },
     {
       "source": "/(.*)",
       "headers": [

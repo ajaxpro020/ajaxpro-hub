@@ -11,6 +11,7 @@ import {
   normalizeTeamName,
   selectProviderFixture,
 } from "../lib/matchday-live";
+import { consumeNextMatchRateLimit } from "../lib/next-match-rate-limit";
 
 const AJAX_FIXTURES_URL = "https://www.ajax.nl/wedstrijden/";
 const TV_GUIDE_URL = "https://www.voetbaloptv.com/wp-json/vtv/v1/wedstrijden";
@@ -47,7 +48,10 @@ export const parseAjaxFixtures = (html: string) => {
     const competition = cleanText(item.match(/class="matches-block__league">([\s\S]*?)<\/span>/)?.[1] ?? "");
     const dateText = cleanText(item.match(/class="matches-block__date">([\s\S]*?)<\/span>/)?.[1] ?? "");
     const kickoff = parseAjaxDate(dateText);
-    const teamNames = [...new Set([...item.matchAll(/<img[^>]+alt="([^"]+)"[^>]*>/g)].map(match => cleanText(match[1])).filter(Boolean))];
+    const participantText = cleanText(item.match(/class="matches-block__participants[^>]*>([\s\S]*)<\/span>\s*<\/div>/)?.[1] ?? "");
+    const participantNames = participantText.split(/\s+[–-]\s+/).map(cleanText).filter(Boolean);
+    const logoNames = [...new Set([...item.matchAll(/<img[^>]+alt="([^"]+)"[^>]*>/g)].map(match => cleanText(match[1])).filter(Boolean))];
+    const teamNames = participantNames.length === 2 ? participantNames : logoNames;
     const [home, away] = teamNames;
     if (!kickoff || !home || !away || (home !== "Ajax" && away !== "Ajax")) return null;
     return { home, away, competition, kickoff };
@@ -55,6 +59,23 @@ export const parseAjaxFixtures = (html: string) => {
   return [...new Map(fixtures.map(fixture => [`${fixture.kickoff.toISOString()}-${fixture.home}-${fixture.away}`, fixture])).values()]
     .sort((a, b) => a.kickoff.getTime() - b.kickoff.getTime());
 };
+
+export const parseAjaxResults = (html: string) => [...html.matchAll(/<tr>[\s\S]*?<\/tr>/g)]
+  .map(match => [...match[0].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map(cell => cleanText(cell[1])))
+  .map(cells => {
+    const dateMatch = cells[0]?.match(/^(\d{2})\.(\d{2})\.(\d{2}|\d{4})$/);
+    const scoreMatch = cells[2]?.match(/^(\d+)\s*-\s*(\d+)$/);
+    if (!dateMatch || !scoreMatch || !cells[1] || !cells[3]) return null;
+    const year = dateMatch[3].length === 2 ? `20${dateMatch[3]}` : dateMatch[3];
+    return {
+      date: `${year}-${dateMatch[2]}-${dateMatch[1]}`,
+      home: cells[1],
+      away: cells[3],
+      goalsHome: Number(scoreMatch[1]),
+      goalsAway: Number(scoreMatch[2]),
+    };
+  })
+  .filter((result): result is NonNullable<typeof result> => Boolean(result));
 
 const parseTvDate = (date: string, time: string) => {
   const [day, month, year] = date.split("-").map(Number);
@@ -111,6 +132,11 @@ const nextStoredFixture = async () => {
   return fixture as StoredFixture | undefined;
 };
 
+const storedFixtures = async () => {
+  const fixtures = await db()`SELECT * FROM matchday_fixtures WHERE kickoff_at>${new Date(Date.now() - 6 * 60 * 60_000)} ORDER BY kickoff_at`;
+  return fixtures as unknown as StoredFixture[];
+};
+
 const reserveProviderCall = async (fixture: StoredFixture, now: Date) => {
   const sql = db(), budgetDay = amsterdamDateKey(now);
   return sql.begin(async tx => {
@@ -136,6 +162,26 @@ type ProviderFixture = {
 const providerUrlFor = (fixture: StoredFixture) => {
   if (fixture.provider_fixture_id) return `${API_FOOTBALL_BASE_URL}/fixtures?id=${fixture.provider_fixture_id}`;
   return `${API_FOOTBALL_BASE_URL}/fixtures?team=${API_FOOTBALL_AJAX_TEAM_ID}&date=${amsterdamDateKey(new Date(fixture.kickoff_at))}&timezone=Europe%2FAmsterdam`;
+};
+
+const refreshOfficialResultFallback = async (fixture: StoredFixture, now: Date) => {
+  try {
+    const response = await fetch(AJAX_FIXTURES_URL, {
+      headers: { "User-Agent": "AjaxPro/1.0 (+https://www.ajaxpro.fans/)" },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!response.ok) return false;
+    const result = parseAjaxResults(await response.text()).find(item =>
+      item.date === amsterdamDateKey(new Date(fixture.kickoff_at))
+      && normalizeTeamName(item.home) === normalizeTeamName(fixture.home_team)
+      && normalizeTeamName(item.away) === normalizeTeamName(fixture.away_team));
+    if (!result) return false;
+    await db()`UPDATE matchday_fixtures SET provider_status='FT',goals_home=${result.goalsHome},goals_away=${result.goalsAway},last_success_at=${now},next_refresh_at=NULL,refresh_locked_until=NULL,finished_at=${now},updated_at=now() WHERE fixture_key=${fixture.fixture_key}`;
+    return true;
+  } catch (error) {
+    console.error("Unable to refresh official Ajax result fallback", error);
+    return false;
+  }
 };
 
 const refreshProviderState = async (fixture: StoredFixture, now: Date) => {
@@ -164,6 +210,7 @@ const refreshProviderState = async (fixture: StoredFixture, now: Date) => {
     await db()`UPDATE matchday_fixtures SET provider_fixture_id=${selected.fixture.id},provider_status=${status},elapsed=${selected.fixture.status.elapsed},elapsed_extra=${selected.fixture.status.extra??null},goals_home=${selected.goals.home},goals_away=${selected.goals.away},last_success_at=${now},next_refresh_at=${delay===null?null:new Date(now.getTime()+delay)},refresh_locked_until=NULL,finished_at=${finished?now:null},updated_at=now() WHERE fixture_key=${fixture.fixture_key}`;
   } catch (error) {
     console.error("Unable to refresh API-Football fixture", error);
+    if (await refreshOfficialResultFallback(fixture, now)) return;
     const delay = nextProviderDelayMs({ status: fixture.provider_status, calls: reservation.calls, failed: true }) ?? 5 * 60_000;
     await db()`UPDATE matchday_fixtures SET next_refresh_at=${new Date(now.getTime()+delay)},refresh_locked_until=NULL,updated_at=now() WHERE fixture_key=${fixture.fixture_key}`;
   }
@@ -192,11 +239,33 @@ const responseFor = (fixture: StoredFixture | undefined, now: Date) => {
   };
 };
 
-const jsonResponse = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
+const programResponseFor = (fixtures: StoredFixture[], now: Date) => ({
+  fixtures: fixtures.map((fixture) => {
+    const isHome = normalizeTeamName(fixture.home_team).includes("ajax");
+    return {
+      home: fixture.home_team,
+      away: fixture.away_team,
+      opponent: isHome ? fixture.away_team : fixture.home_team,
+      isHome,
+      competition: fixture.competition,
+      kickoff: new Date(fixture.kickoff_at).toISOString(),
+      tv: fixture.tv,
+      status: fixture.provider_status,
+      score: fixture.goals_home != null && fixture.goals_away != null
+        ? { home: fixture.goals_home, away: fixture.goals_away }
+        : null,
+    };
+  }),
+  updatedAt: now.toISOString(),
+});
+
+const jsonResponse = (body: unknown, status = 200, extraHeaders: Record<string, string> = {}) => new Response(JSON.stringify(body), {
   status,
   headers: {
     "Content-Type": "application/json; charset=UTF-8",
     "Cache-Control": "public, max-age=0, s-maxage=15, stale-while-revalidate=45, stale-if-error=86400",
+    "Vercel-CDN-Cache-Control": "public, s-maxage=15, stale-while-revalidate=45, stale-if-error=86400",
+    ...extraHeaders,
   },
 });
 
@@ -204,7 +273,16 @@ export async function GET(request: Request) {
   if (request.method !== "GET") return jsonResponse({ error: "Method not allowed" }, 405);
   const now = new Date();
   try {
+    const rateLimit = await consumeNextMatchRateLimit(request);
+    if (!rateLimit.allowed) return jsonResponse(
+      { error: "Te veel verzoeken. Probeer het later opnieuw." },
+      429,
+      { "Cache-Control": "private, no-store", "Vercel-CDN-Cache-Control": "private, no-store", "Retry-After": String(rateLimit.retryAfter) },
+    );
     await syncSourceFixtures();
+    if (new URL(request.url).searchParams.get("view") === "program") {
+      return jsonResponse(programResponseFor(await storedFixtures(), now));
+    }
     let fixture = await nextStoredFixture();
     if (!fixture) return jsonResponse(responseFor(undefined, now));
     await refreshProviderState(fixture, now);

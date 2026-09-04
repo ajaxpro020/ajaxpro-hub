@@ -37,12 +37,19 @@ test("auditdata verwijdert stem- en secretvelden",()=>{
 });
 
 test("beheerbron gebruikt soft delete, revision locking, audit en kopieert geen stemmen",()=>{
-  const source=readFileSync(new URL("../api/motm/manage.ts",import.meta.url),"utf8");
+  const source=readFileSync(new URL("../api-impl/motm/manage.ts",import.meta.url),"utf8");
   assert.match(source,/deleted_at=now\(\)/);assert.match(source,/revision=revision\+1/);assert.match(source,/AND revision=\$\{/);assert.match(source,/motm_audit_log/);assert.doesNotMatch(source,/INSERT INTO motm_votes/);assert.doesNotMatch(source,/DELETE FROM motm_votes/);
 });
 
+test("Discord-mededeling gebruikt webhook, allowed_mentions en eenmalige databasevergrendeling",()=>{
+  const source=readFileSync(new URL("../api-impl/motm/manage.ts",import.meta.url),"utf8");
+  const migration=readFileSync(new URL("../db/migrations/008_motm_announcements.sql",import.meta.url),"utf8");
+  for(const value of ["DISCORD_MOTM_ANNOUNCEMENT_WEBHOOK","allowed_mentions:{parse:[\"everyone\"]}","FOR UPDATE","announcement_sent_at","announcement_sent_by_discord_user_id","announcement_sent"])assert.ok(source.includes(value),value);
+  assert.match(migration,/announcement_sent_at/);assert.match(migration,/announcement_sent_by_discord_user_id/);
+});
+
 test("alle publieke hoofdqueries filteren verwijderde stemmingen",()=>{
-  for(const file of ["../api/club.ts","../api/motm/index.ts","../api/motm/share.ts","../api/motm/vote.ts","../lib/motm-scheduling.ts"]){const source=readFileSync(new URL(file,import.meta.url),"utf8");assert.match(source,/deleted_at IS NULL/,file);}
+  for(const file of ["../api/club.ts","../api-impl/motm/index.ts","../api-impl/motm/share.ts","../api-impl/motm/vote.ts","../lib/motm-scheduling.ts"]){const source=readFileSync(new URL(file,import.meta.url),"utf8");assert.match(source,/deleted_at IS NULL/,file);}
 });
 
 test("migratie is additive en bewaart stemmen",()=>{

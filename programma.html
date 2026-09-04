@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ajax-programma | AjaxPro</title>
+    <meta name="description" content="Bekijk het actuele Ajax-programma met datums, competities en tv-informatie.">
+    <meta name="theme-color" content="#05070d">
+    <meta name="color-scheme" content="dark">
+    <link rel="icon" href="./Favicon/favicon.ico" sizes="any">
+    <link rel="stylesheet" href="./styles.css?v=20260824-program">
+    <link rel="stylesheet" href="./programma.css?v=20260830-priority3">
+    <script>
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
+  </head>
+  <body class="program-page">
+    <header class="site-header program-header">
+      <a class="brand" href="./" aria-label="AjaxPro home"><img src="./assets/ajaxpro-logo.png" alt="AjaxPro"></a>
+      <a class="program-back" href="./">← Terug</a>
+    </header>
+    <main>
+      <section class="program-hero section-shell" aria-labelledby="program-title">
+        <h1 id="program-title">Programma</h1>
+        <p class="program-hero__lead">De komende wedstrijden van Ajax. Hoe dichterbij de aftrap, hoe meer je ziet.</p>
+      </section>
+      <section class="program-content section-shell" aria-live="polite">
+        <p class="program-status" data-program-status>Programma laden…</p>
+        <div class="program-list" data-program-list></div>
+      </section>
+    </main>
+    <script src="./programma.js?v=20260830-priority"></script>
+  </body>
+</html>

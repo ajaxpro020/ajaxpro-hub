@@ -1,0 +1,473 @@
+.contracts-page {
+  background:
+    linear-gradient(180deg, rgba(179, 15, 36, 0.08), transparent 260px),
+    var(--bg);
+}
+
+.contracts-hero {
+  padding-block: 64px 44px;
+}
+
+.contracts-hero h1 {
+  max-width: 760px;
+  margin-top: 10px;
+  font-size: clamp(3rem, 9vw, 4.75rem);
+  letter-spacing: -0.035em;
+  line-height: 0.94;
+  text-wrap: balance;
+}
+
+.contracts-hero__lead {
+  max-width: 58ch;
+  margin-top: 20px;
+  color: var(--muted);
+  font-size: 1.05rem;
+  text-wrap: pretty;
+}
+
+.contracts-summary {
+  max-width: 760px;
+  margin-top: 30px;
+  border-radius: 14px;
+  background: var(--line);
+}
+
+.contracts-summary div,
+.contracts-summary div:first-child {
+  grid-column: auto;
+  padding: 16px 18px;
+  background: #0b111c;
+}
+
+.contracts-summary dt {
+  color: #aab3c2;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+}
+
+.contracts-summary dd {
+  margin-top: 4px;
+  font-size: 1.1rem;
+}
+
+.contracts-content {
+  padding-bottom: 80px;
+}
+
+.contracts-status-nav {
+  top: 10px;
+  max-width: 460px;
+  margin-bottom: 56px;
+  padding: 5px;
+  border-radius: 14px;
+  background: #080c14;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.contracts-status-nav a {
+  border-radius: 10px;
+  font-size: 0.82rem;
+}
+
+.contracts-status-nav a:first-child {
+  background: #151d2a;
+}
+
+.contracts-status-nav span {
+  min-width: 24px;
+  height: 24px;
+  border-radius: 7px;
+}
+
+.contracts-section-heading {
+  margin-bottom: 36px;
+}
+
+.contracts-section-heading h2 {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+
+.contracts-section-heading > p:last-child {
+  max-width: 58ch;
+  margin-top: 10px;
+  text-wrap: pretty;
+}
+
+.contract-year {
+  padding-block: 28px 44px;
+}
+
+.contract-year__heading {
+  margin-bottom: 18px;
+}
+
+.contract-year__heading h2 {
+  font-size: 2rem;
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+
+.contract-year__heading span {
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+}
+
+.contracts-grid {
+  align-items: start;
+  gap: 12px;
+}
+
+.contract-card {
+  display: block;
+  overflow: hidden;
+  min-height: 0;
+  padding: 0;
+  border-color: #303b4d;
+  border-radius: 14px;
+  background: #0c121d;
+  box-shadow: none;
+}
+
+.contract-card::after {
+  content: none;
+}
+
+.contract-card__header {
+  display: flex;
+  min-height: 82px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px;
+}
+
+.contract-card__identity {
+  min-width: 0;
+}
+
+.contract-card h3 {
+  display: block;
+  margin: 0;
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: -0.015em;
+  line-height: 1.18;
+  text-wrap: balance;
+}
+
+.contract-card__identity p {
+  margin-top: 6px;
+  color: #aab3c2;
+  font-size: 0.72rem;
+}
+
+.contract-card__type {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border: 1px solid #3a4558;
+  border-radius: 999px;
+  color: #c4ccda;
+  font-size: 0.62rem;
+  font-weight: 850;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.contract-card__type--loan {
+  border-color: rgba(126, 155, 212, 0.48);
+  background: rgba(126, 155, 212, 0.1);
+  color: #bfd0f1;
+}
+
+.contract-card__facts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  border-top: 1px solid #263143;
+  background: #090f19;
+}
+
+.contract-card__fact {
+  min-width: 0;
+  padding: 14px 18px 16px;
+}
+
+.contract-card__fact + .contract-card__fact {
+  border-top: 1px solid #263143;
+}
+
+.contract-card__fact > span {
+  display: block;
+  color: #929daf;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.contract-card__fact strong {
+  display: block;
+  overflow-wrap: anywhere;
+  margin-top: 5px;
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.contract-card__fact small {
+  display: block;
+  margin-top: 5px;
+  color: #aab3c2;
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.contract-card--incoming,
+.contract-card--loan {
+  border-color: rgba(126, 155, 212, 0.42);
+  background: #0d1420;
+}
+
+.contract-card--incoming .contract-card__facts,
+.contract-card--loan .contract-card__facts {
+  background: #0a111c;
+}
+
+.loan-section {
+  margin-top: 40px;
+  padding-block: 64px 32px;
+}
+
+.loan-deal {
+  margin: 0;
+  border-top: 1px solid #303b4d;
+}
+
+.loan-deal summary {
+  min-height: 60px;
+  padding: 9px 18px;
+  gap: 18px;
+}
+
+.loan-deal summary:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.loan-deal summary:active {
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.loan-deal summary:focus-visible {
+  border-radius: 0;
+  outline-offset: -3px;
+}
+
+.loan-deal__title {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.loan-deal__title strong {
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.loan-deal__title small {
+  color: #929daf;
+  font-size: 0.66rem;
+  font-weight: 650;
+}
+
+.loan-deal__summary-meta {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.loan-deal__status {
+  min-height: 23px;
+  padding: 3px 8px;
+  font-size: 0.58rem;
+  letter-spacing: 0.035em;
+}
+
+.loan-deal__status--confirmed {
+  background: rgba(126, 155, 212, 0.12);
+  color: #bfd0f1;
+}
+
+.loan-deal__status--reported {
+  background: rgba(234, 179, 78, 0.12);
+  color: #f0cb84;
+}
+
+.loan-deal__body {
+  padding: 4px 18px 20px;
+}
+
+.loan-deal__body h4 {
+  margin: 8px 0 0;
+  color: #aab3c2;
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.loan-deal__terms {
+  margin-top: 10px;
+  padding-left: 18px;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.loan-deal__caveat {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #263143;
+}
+
+.loan-deal__caveat strong {
+  color: #c4ccda;
+  font-size: 0.7rem;
+  font-weight: 850;
+}
+
+.loan-deal__caveat p {
+  max-width: 72ch;
+  margin: 5px 0 0;
+  color: #aab3c2;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.loan-deal__sources {
+  margin-top: 14px;
+  font-size: 0.7rem;
+}
+
+.loan-deal__sources a {
+  min-height: 36px;
+}
+
+.contracts-note {
+  margin-top: 28px;
+  padding: 20px;
+  border-color: #303b4d;
+  border-radius: 14px;
+  background: #0a101a;
+}
+
+.contracts-note h2 {
+  font-size: 1rem;
+}
+
+.contracts-note p {
+  color: #aab3c2;
+  line-height: 1.55;
+}
+
+@media (min-width: 620px) {
+  .contracts-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .contract-card__facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .contract-card__fact + .contract-card__fact {
+    border-top: 0;
+    border-left: 1px solid #263143;
+  }
+
+  .contract-card--loan .contract-card__facts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 760px) {
+  .contracts-hero {
+    padding-block: 76px 58px;
+  }
+
+  .contracts-status-nav {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+
+  .contracts-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .contracts-grid--loans {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 980px) {
+  .contract-year {
+    display: grid;
+    grid-template-columns: 116px minmax(0, 1fr);
+    gap: 28px;
+  }
+
+  .contract-year__heading {
+    display: block;
+    margin: 0;
+  }
+
+  .contract-year__heading span {
+    display: block;
+    margin-top: 8px;
+  }
+}
+
+@media (max-width: 619px) {
+  .contracts-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .contracts-status-nav {
+    margin-bottom: 42px;
+  }
+
+  .contract-card__header {
+    min-height: 0;
+    padding: 16px;
+  }
+
+  .contract-card__fact {
+    padding-inline: 16px;
+  }
+
+  .loan-deal summary {
+    padding-inline: 16px;
+  }
+
+  .loan-deal__summary-meta {
+    gap: 9px;
+  }
+
+  .loan-deal__status {
+    max-width: 92px;
+    text-align: center;
+  }
+
+  .loan-deal__body {
+    padding-inline: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loan-deal summary {
+    transition: none;
+  }
+}
