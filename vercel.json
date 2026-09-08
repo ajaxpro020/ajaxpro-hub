@@ -4,19 +4,12 @@
   "functions": {
     "api/next-match.ts": {
       "maxDuration": 15
-    },
-    "api/media-watch-daily.ts": {
-      "maxDuration": 300
     }
   },
   "crons": [
     {
       "path": "/api/next-match?view=program",
       "schedule": "0 5 * * *"
-    },
-    {
-      "path": "/api/media-watch-daily",
-      "schedule": "20 4 * * *"
     }
   ],
   "rewrites": [
@@ -67,10 +60,6 @@
     {
       "source": "/club/tools/socials",
       "destination": "/api/club-tools?view=socials"
-    },
-    {
-      "source": "/club/tools/media-watch",
-      "destination": "/api/club-tools?view=media-watch"
     },
     {
       "source": "/club/stand",

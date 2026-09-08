@@ -2,10 +2,8 @@ import { noStoreHeaders } from "./discord-auth";
 
 export const MOTM_VOTE_MAX_BODY_BYTES = 16 * 1024;
 export const MOTM_MANAGE_MAX_BODY_BYTES = 32 * 1024;
-export const MEDIA_WATCH_MAX_BODY_BYTES = 8 * 1024 * 1024;
 export const MOTM_VOTE_MAX_FORM_FIELDS = 20;
 export const MOTM_MANAGE_MAX_FORM_FIELDS = 256;
-export const MEDIA_WATCH_MAX_FORM_FIELDS = 24;
 
 const payloadTooLarge = (message: string) => new Response(message, {
   status: 413,

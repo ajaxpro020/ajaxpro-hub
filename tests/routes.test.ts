@@ -14,7 +14,6 @@ test("openbare deelroute en bestaande interne stemroute blijven beide bestaan",(
   assert.equal(routes.get("/api/motm/share"),"/api/motm-public?action=share");
   assert.equal(routes.get("/api/motm/manage"),"/api/motm-manage");
   assert.equal(routes.get("/club/tools/socials"),"/api/club-tools?view=socials");
-  assert.equal(routes.get("/club/tools/media-watch"),"/api/club-tools?view=media-watch");
   for(const [source,destination] of routes)assert.doesNotMatch(`${source} ${destination}`,/transfer-talk/i);
 });
 
@@ -23,22 +22,9 @@ test("Socials gebruikt de bestaande club-tools serverless function",()=>{
   assert.equal(config.functions["api/socials.ts"],undefined);
 });
 
-test("Media Watch gebruikt de bestaande club-tools serverless function",()=>{
-  assert.equal(config.rewrites.find((route:{source:string})=>route.source==="/club/tools/media-watch")?.destination,"/api/club-tools?view=media-watch");
-  assert.equal(config.functions["api/media-watch.ts"],undefined);
-});
-
 test("programma wordt dagelijks automatisch ververst via de bestaande match-API",()=>{
   assert.deepEqual(config.crons.find((cron:{path:string})=>cron.path==="/api/next-match?view=program"),{
     path:"/api/next-match?view=program",
     schedule:"0 5 * * *",
   });
-});
-
-test("Media Watch hergebruikt Vercel Cron eenmaal per dag",()=>{
-  assert.deepEqual(config.crons.find((cron:{path:string})=>cron.path==="/api/media-watch-daily"),{
-    path:"/api/media-watch-daily",
-    schedule:"20 4 * * *",
-  });
-  assert.equal(config.functions["api/media-watch-daily.ts"].maxDuration,300);
 });

@@ -12,7 +12,6 @@ const managementPermissions = new Set<Permission>([
   permissions.adminManage,
   permissions.motmManage,
   permissions.motmDelete,
-  permissions.mediaWatchManage,
 ]);
 type AuthorizationOptions = {
   nowSeconds?: number;

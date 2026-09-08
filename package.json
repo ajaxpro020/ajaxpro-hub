@@ -5,9 +5,7 @@
     "test": "npm run typecheck && tsx --test tests/*.test.ts",
     "db:migrate": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/migrations/001_motm.sql",
     "db:migrate:management": "tsx scripts/migrate-management.ts",
-    "db:migrate:matchday": "tsx scripts/migrate-matchday.ts",
-    "db:migrate:media-watch": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/migrations/020_media_watch_foundation.sql -f db/migrations/021_media_watch_crawl_sources.sql -f db/migrations/022_media_watch_source_revisions.sql -f db/migrations/023_media_watch_claim_extraction.sql -f db/migrations/024_media_watch_dossiers.sql -f db/migrations/025_media_watch_entities.sql -f db/migrations/026_media_watch_revision_processing.sql",
-    "media-watch:backfill": "tsx scripts/media-watch-backfill.ts"
+    "db:migrate:matchday": "tsx scripts/migrate-matchday.ts"
   },
   "dependencies": {
     "postgres": "^3.4.7"

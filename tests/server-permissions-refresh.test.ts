@@ -12,7 +12,6 @@ import {
 
 const managerRole = "manager-role";
 process.env.MOTM_MANAGER_ROLE_IDS = managerRole;
-process.env.MEDIA_WATCH_ADMIN_ROLE_IDS = managerRole;
 
 const session = (roles = [managerRole], issuedAt = 1_000, userId = "user"): Session => ({
   userId,
@@ -50,7 +49,7 @@ test("beheerrechten vervallen exact één uur na Discord-login", async () => {
 });
 
 test("een oude sessierol kan na één uur geen beheerpagina of mutatie autoriseren", async () => {
-  for (const permission of [permissions.motmManage, permissions.motmDelete, permissions.mediaWatchManage, permissions.adminManage]) {
+  for (const permission of [permissions.motmManage, permissions.motmDelete, permissions.adminManage]) {
     assert.equal(await authorizeSessionPermission(session([managerRole], 1_000, "old"), permission, {
       nowSeconds: 1_000 + MANAGEMENT_SESSION_MAX_AGE_SECONDS,
     }), null);
