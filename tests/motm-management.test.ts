@@ -43,9 +43,16 @@ test("beheerbron gebruikt soft delete, revision locking, audit en kopieert geen 
 
 test("Discord-mededeling gebruikt webhook, allowed_mentions en eenmalige databasevergrendeling",()=>{
   const source=readFileSync(new URL("../api-impl/motm/manage.ts",import.meta.url),"utf8");
+  const announcements=readFileSync(new URL("../lib/motm-announcements.ts",import.meta.url),"utf8");
   const migration=readFileSync(new URL("../db/migrations/008_motm_announcements.sql",import.meta.url),"utf8");
-  for(const value of ["DISCORD_MOTM_ANNOUNCEMENT_WEBHOOK","allowed_mentions:{parse:[\"everyone\"]}","FOR UPDATE","announcement_sent_at","announcement_sent_by_discord_user_id","announcement_sent"])assert.ok(source.includes(value),value);
+  for(const value of ["DISCORD_MOTM_ANNOUNCEMENT_WEBHOOK","allowed_mentions: { parse: [\"everyone\"] }","FOR UPDATE","announcement_sent_at","announcement_sent_by_discord_user_id","announcement_sent"])assert.ok(announcements.includes(value),value);
+  assert.match(source,/sendAnnouncement\(announcementWebhook\(\),text,link\)/);
   assert.match(migration,/announcement_sent_at/);assert.match(migration,/announcement_sent_by_discord_user_id/);
+});
+
+test("automatische mededeling hergebruikt dezelfde lock en schrijft een systeem-audit",()=>{
+  const source=readFileSync(new URL("../lib/motm-announcements.ts",import.meta.url),"utf8");
+  for(const value of ["system:auto-minute-80","Automatische mededeling","trigger: \"minute_80\"","status !== \"open\""])assert.ok(source.includes(value),value);
 });
 
 test("alle publieke hoofdqueries filteren verwijderde stemmingen",()=>{

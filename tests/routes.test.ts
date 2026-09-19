@@ -28,3 +28,11 @@ test("programma wordt dagelijks automatisch ververst via de bestaande match-API"
     schedule:"0 5 * * *",
   });
 });
+
+test("MOTM-fallback gebruikt GitHub OIDC en geen extra Vercel-functie",()=>{
+  const workflow=readFileSync(new URL("../.github/workflows/motm-announcement.yml",import.meta.url),"utf8");
+  assert.match(workflow,/cron: "\*\/5 \* \* \* \*"/);
+  assert.match(workflow,/id-token: write/);
+  assert.match(workflow,/view=motm-announcement/);
+  assert.equal(config.functions["api/motm-announcement.ts"],undefined);
+});

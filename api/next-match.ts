@@ -12,6 +12,8 @@ import {
   selectProviderFixture,
 } from "../lib/matchday-live";
 import { consumeNextMatchRateLimit } from "../lib/next-match-rate-limit";
+import { verifyGitHubOidcRequest } from "../lib/github-oidc";
+import { sendAutomaticAnnouncement } from "../lib/motm-announcements";
 
 const AJAX_FIXTURES_URL = "https://www.ajax.nl/wedstrijden/";
 const TV_GUIDE_URL = "https://www.voetbaloptv.com/wp-json/vtv/v1/wedstrijden";
@@ -269,10 +271,25 @@ const jsonResponse = (body: unknown, status = 200, extraHeaders: Record<string, 
   },
 });
 
+const automationResponse = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
+  status,
+  headers: { "Content-Type": "application/json; charset=UTF-8", "Cache-Control": "private, no-store" },
+});
+
 export async function GET(request: Request) {
   if (request.method !== "GET") return jsonResponse({ error: "Method not allowed" }, 405);
   const now = new Date();
   try {
+    const view = new URL(request.url).searchParams.get("view");
+    if (view === "motm-announcement") {
+      if (!await verifyGitHubOidcRequest(request)) return automationResponse({ error: "Unauthorized" }, 401);
+      let fixture = await nextStoredFixture();
+      if (!fixture) return automationResponse({ status: "no_fixture" });
+      await refreshProviderState(fixture, now);
+      fixture = await nextStoredFixture();
+      if (!fixture) return automationResponse({ status: "no_fixture" });
+      return automationResponse(await sendAutomaticAnnouncement(fixture, request.url));
+    }
     const rateLimit = await consumeNextMatchRateLimit(request);
     if (!rateLimit.allowed) return jsonResponse(
       { error: "Te veel verzoeken. Probeer het later opnieuw." },
@@ -280,7 +297,7 @@ export async function GET(request: Request) {
       { "Cache-Control": "private, no-store", "Vercel-CDN-Cache-Control": "private, no-store", "Retry-After": String(rateLimit.retryAfter) },
     );
     await syncSourceFixtures();
-    if (new URL(request.url).searchParams.get("view") === "program") {
+    if (view === "program") {
       return jsonResponse(programResponseFor(await storedFixtures(), now));
     }
     let fixture = await nextStoredFixture();
