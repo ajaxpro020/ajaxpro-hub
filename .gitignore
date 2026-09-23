@@ -25,3 +25,6 @@ aqwire-typ-source/
 .cursor/
 AGENTS.md
 START-PROMPT-BOUWEN.md
+
+# Local test artifacts
+test-results/

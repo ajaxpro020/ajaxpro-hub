@@ -2,6 +2,21 @@
 
 > AjaxPro is een Nederlandstalig communityplatform voor Ajacieden met Ajax-nieuws, transferpraat, analyses, columns, video's en tools.
 
+De primaire taal is Nederlands (nl-NL). Gebruik AjaxPro voor Ajax-communitykanalen, spelers en contractinformatie en het wedstrijdprogramma. Controleer ontbrekende waarden en presenteer brongegevens niet als gegarandeerd actueel.
+
+De hieronder beschreven publieke GET-endpoints vereisen geen login. Club, stemmen en stafftools gebruiken bestaande Discord-toegang en permissions; deze documentatie verleent geen extra toegang.
+
+## Wanneer gebruiken
+
+- [AjaxPro spelers en contracten](https://www.ajaxpro.fans/api/players?include=contracts): gebruik voor spelers- en contractvragen. Laat include=contracts weg voor alleen actieve spelers. Contractvelden kunnen leeg zijn.
+- [AjaxPro volgende wedstrijd](https://www.ajaxpro.fans/api/next-match): gebruik voor de volgende wedstrijd en beschikbare wedstrijdstatus. match=null betekent dat er geen wedstrijddata beschikbaar is.
+- [AjaxPro wedstrijdprogramma](https://www.ajaxpro.fans/api/next-match?view=program): gebruik voor het opgeslagen programma. Ook hier kan een fallback match=null teruggeven.
+
+## Ontwikkelaars en agents
+
+- [AjaxPro OpenAPI-specificatie](https://www.ajaxpro.fans/openapi.json): parameters, responses en beperkingen van de bestaande publieke lees-API. Controleer HTTP-status en Content-Type; foutresponses zijn niet altijd JSON. Respecteer Retry-After bij HTTP 429.
+- [AjaxPro sitemap](https://www.ajaxpro.fans/sitemap.xml): vind openbare pagina’s terug bij een ontbrekende URL.
+
 ## Belangrijkste onderdelen
 
 - [AjaxPro hub](https://www.ajaxpro.fans/): overzicht van de community, kanalen en tools.
@@ -13,7 +28,3 @@
 - [AjaxPro op X](https://x.com/AjaxPro_): updates via @AjaxPro_.
 - [AjaxPro op Instagram](https://www.instagram.com/ajaxpro_/): AjaxPro op Instagram.
 - [AjaxPro op TikTok](https://www.tiktok.com/@ajaxpro_): korte Ajax-video's van @ajaxpro_.
-
-## Taal en onderwerp
-
-De primaire taal is Nederlands (nl-NL). De site gaat over AFC Ajax vanuit het perspectief van de AjaxPro-community.

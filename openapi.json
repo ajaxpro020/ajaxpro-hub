@@ -1,0 +1,552 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "AjaxPro publieke lees-API",
+    "version": "1.0.0",
+    "description": "Documentatie van bestaande publieke GET-endpoints voor Ajax-spelers en wedstrijden. Geen login nodig. Club, stemmen en staffbeheer vallen buiten deze specificatie. Data kan ontbreken of vertraagd zijn; dit is geen garantie voor live volledigheid."
+  },
+  "servers": [
+    {
+      "url": "https://www.ajaxpro.fans"
+    }
+  ],
+  "security": [],
+  "paths": {
+    "/api/players": {
+      "get": {
+        "operationId": "getAjaxPlayers",
+        "summary": "Lees de Ajax-spelerslijst",
+        "description": "Geeft actieve spelers terug. Gebruik include=contracts om ook inactieve spelers voor het contractenoverzicht op te halen. Contract- en dealgegevens kunnen null zijn. Zonder database gebruikt de server een basisselectie met lege contractvelden. De response wordt kort gecachet.",
+        "parameters": [
+          {
+            "name": "include",
+            "in": "query",
+            "required": false,
+            "description": "Gebruik contracts om ook inactieve spelers op te halen; laat weg voor alleen actieve spelers.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "contracts"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Spelerslijst; kan leeg zijn.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayersResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Onverwachte server- of platformfout. JSON is niet gegarandeerd; controleer status en Content-Type voordat je de response verwerkt."
+          }
+        }
+      }
+    },
+    "/api/next-match": {
+      "get": {
+        "operationId": "getAjaxMatchday",
+        "summary": "Lees de volgende wedstrijd of het programma",
+        "description": "Zonder view volgt de response de volgende wedstrijd. Met view=program volgt het opgeslagen wedstrijdprogramma. Een fallback bij ontbrekende data of een bronfout kan voor beide varianten match=null en een message teruggeven met HTTP 200. updatedAt is het tijdstip van responseopbouw, geen garantie voor bronactualiteit. De origin begrenst verzoeken per bron op 60 per 60 seconden; caching kan verzoeken afvangen. Respecteer Retry-After bij 429 en vermijd onnodig pollen.",
+        "parameters": [
+          {
+            "name": "view",
+            "in": "query",
+            "required": false,
+            "description": "Gebruik program voor het programma; laat weg voor de volgende wedstrijd.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "program"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Wedstrijd, programma of fallback zonder wedstrijd.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/MatchResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProgramResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Te veel verzoeken. Wacht het aantal seconden uit Retry-After.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Aantal seconden tot een nieuwe poging.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Onverwachte platformfout. JSON is niet gegarandeerd; controleer status en Content-Type."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Source": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "label",
+          "url"
+        ]
+      },
+      "LoanDeal": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "confirmed",
+              "reported"
+            ]
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "terms": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Source"
+            }
+          }
+        },
+        "required": [
+          "status",
+          "updatedAt",
+          "terms",
+          "note",
+          "sources"
+        ]
+      },
+      "ArrivalDeal": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "confirmed",
+              "partly_reported"
+            ]
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "terms": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Source"
+            }
+          },
+          "fromClub": {
+            "type": "string"
+          },
+          "transferType": {
+            "type": "string"
+          },
+          "fee": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "updatedAt",
+          "terms",
+          "note",
+          "sources",
+          "fromClub",
+          "transferType",
+          "fee"
+        ]
+      },
+      "Player": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "shirtNumber": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "position": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "contractEnd": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "contractPosition": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "contractNote": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "loanClub": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "loanEnd": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "loanNote": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "loanDeal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LoanDeal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "arrivalDeal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArrivalDeal"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optionele aankomst- en transferdetails; kan ontbreken op oudere versies van de response."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "shirtNumber",
+          "position",
+          "imageUrl",
+          "active",
+          "contractEnd",
+          "contractPosition",
+          "contractNote",
+          "loanClub",
+          "loanEnd",
+          "loanNote",
+          "loanDeal",
+          "updatedAt"
+        ]
+      },
+      "PlayersResponse": {
+        "type": "object",
+        "properties": {
+          "players": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Player"
+            }
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Latest player update as an ISO timestamp; empty string for an empty roster."
+          }
+        },
+        "required": [
+          "players",
+          "updatedAt"
+        ]
+      },
+      "Score": {
+        "type": "object",
+        "properties": {
+          "home": {
+            "type": "integer"
+          },
+          "away": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "home",
+          "away"
+        ]
+      },
+      "Fixture": {
+        "type": "object",
+        "properties": {
+          "home": {
+            "type": "string"
+          },
+          "away": {
+            "type": "string"
+          },
+          "opponent": {
+            "type": "string"
+          },
+          "isHome": {
+            "type": "boolean"
+          },
+          "competition": {
+            "type": "string"
+          },
+          "kickoff": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "tv": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "score": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Score"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "home",
+          "away",
+          "opponent",
+          "isHome",
+          "competition",
+          "kickoff",
+          "tv",
+          "status",
+          "score"
+        ]
+      },
+      "Match": {
+        "type": "object",
+        "properties": {
+          "home": {
+            "type": "string"
+          },
+          "away": {
+            "type": "string"
+          },
+          "opponent": {
+            "type": "string"
+          },
+          "isHome": {
+            "type": "boolean"
+          },
+          "competition": {
+            "type": "string"
+          },
+          "kickoff": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "tv": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "score": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Score"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "hidden",
+              "live",
+              "countdown"
+            ]
+          },
+          "minute": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isBreak": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "home",
+          "away",
+          "opponent",
+          "isHome",
+          "competition",
+          "kickoff",
+          "tv",
+          "status",
+          "score",
+          "mode",
+          "minute",
+          "isBreak"
+        ]
+      },
+      "MatchResponse": {
+        "type": "object",
+        "properties": {
+          "match": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Match"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "match",
+          "updatedAt"
+        ]
+      },
+      "ProgramResponse": {
+        "type": "object",
+        "properties": {
+          "fixtures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Fixture"
+            }
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "fixtures",
+          "updatedAt"
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      }
+    }
+  }
+}
