@@ -1,0 +1,1 @@
+document.querySelector('[data-copy-researchprompt]')?.addEventListener('click',async event=>{const field=document.querySelector('textarea[readonly]');if(!field)return;await navigator.clipboard.writeText(field.value);event.currentTarget.textContent='Gekopieerd';});

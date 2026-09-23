@@ -7,6 +7,7 @@ export const permissions = {
   adminManage: "admin.manage",
   motmManage: "motm.manage",
   motmDelete: "motm.delete",
+  jeugddossiersManage: "jeugddossiers.manage",
 } as const;
 
 export type Permission = (typeof permissions)[keyof typeof permissions];
@@ -32,6 +33,10 @@ export const rolesHavePermission = (
   }
   if (permission === permissions.motmDelete) {
     const allowed = idsFromEnv("MOTM_DELETE_ROLE_IDS");
+    return roleIds.some(roleId => allowed.has(roleId));
+  }
+  if (permission === permissions.jeugddossiersManage) {
+    const allowed = idsFromEnv("PORTAL_TEAM_TOOL_ROLE_IDS");
     return roleIds.some(roleId => allowed.has(roleId));
   }
   if (permission === permissions.toolsTactics || permission === permissions.toolsScreenshot || permission === permissions.toolsSocials) {

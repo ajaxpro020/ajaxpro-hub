@@ -62,6 +62,18 @@
       "destination": "/api/club-tools?view=socials"
     },
     {
+      "source": "/club/tools/jeugddossiers",
+      "destination": "/api/jeugddossiers-manage"
+    },
+    {
+      "source": "/club/jeugddossiers/speler/:id",
+      "destination": "/api/jeugddossiers?id=:id"
+    },
+    {
+      "source": "/club/jeugddossiers",
+      "destination": "/api/jeugddossiers"
+    },
+    {
       "source": "/club/stand",
       "destination": "/api/motm-public?action=stand"
     },

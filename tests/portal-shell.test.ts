@@ -10,8 +10,8 @@ const analyst={...member,discordRoleIds:[roles.analyst]};
 test("een gewoon lid ziet MOTM maar geen Tools",async()=>{
   const html=await page("Stemmen","<main>Inhoud</main>","",member,"motm").text();
   assert.match(html,/href="\/club"/);
-  assert.match(html,/href="\/club\/motm" class="active" aria-current="page"/);
-  assert.match(html,/>MOTM<\/a>/);
+  assert.match(html,/href="\/club\/stand" class="active" aria-current="page"/);
+  assert.match(html,/href="\/club\/stand" class="active" aria-current="page">MOTM<\/a>/);
   assert.match(html,/aria-label="MOTM-navigatie"[\s\S]*href="\/club\/stand"/);
   assert.doesNotMatch(html,/href="\/club\/tools"/);
   assert.match(html,/Ajacied/);
@@ -42,9 +42,9 @@ test("de Tools-403 gebruikt Home en markeert Stemmen niet actief",async()=>{
   assert.doesNotMatch(html,/href="\/club\/motm" class="active"/);
 });
 
-test("Club- en MOTM-pagina's laden stylesheetversie 33 en het mobiele menuscript",async()=>{
+test("Club- en MOTM-pagina's laden stylesheetversie 36 en het mobiele menuscript",async()=>{
   const html=await page("Club","<main>Inhoud</main>","",member,"home").text();
-  assert.match(html,/\/motm\.css\?v=33/);
+  assert.match(html,/\/motm\.css\?v=36/);
   assert.match(html,/\/portal-nav\.js/);
 });
 
