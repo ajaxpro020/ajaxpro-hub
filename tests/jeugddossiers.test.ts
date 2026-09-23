@@ -7,7 +7,7 @@ const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf
 const source = read("../api-impl/jeugddossiers.ts");
 
 test("Jeugddossiers vereist portal.access en gebruikt geen publiek data-endpoint", () => {
-  assert.match(source, /getSessionWithPermission\(request, permissions\.portalAccess\)/);
+  assert.match(source, /getSessionWithCurrentRoles\(request\)/);
   assert.match(source, /redirect\(`\/api\/auth\/discord-login/);
 });
 

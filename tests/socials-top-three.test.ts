@@ -38,7 +38,7 @@ test("FotMob-spelling Tsigankov koppelt via stabiel ID aan de bestaande AjaxPro-
   const {registryPhotoFor}=await loadTopThree();
   const registry=registryPhotoFor({fotmobId:564847,optaId:194282,name:"Viktor Tsigankov"},players);
   assert.equal(registry?.id,"tsygankov");
-  assert.equal(registry?.imageUrl,"/assets/players/motm/tsygankov_2627.jpg");
+  assert.equal(registry?.imageUrl,"/assets/players/motm/tsygankov_2627.png");
 });
 
 test("maximaal twee interessante niet-nulstats volgen de afgesproken voorkeur",async()=>{

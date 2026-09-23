@@ -6,8 +6,10 @@ import { players } from "../data/players";
 const byId=(id:string)=>players.find(player=>player.id===id);
 
 test("actieve MOTM-selectie bevat de actuele unieke spelersgroep",()=>{
-  assert.equal(players.length,27);
-  assert.equal(new Set(players.map(player=>player.id)).size,27);
+  assert.equal(players.length,28);
+  assert.equal(new Set(players.map(player=>player.id)).size,28);
+  assert.equal(byId("bissouma")?.name,"Yves Bissouma");
+  assert.equal(byId("bissouma")?.shirtNumber,null);
   assert.equal(byId("amrabat")?.shirtNumber,4);
   assert.equal(byId("amrabat")?.position,"Middenvelder");
   assert.equal(byId("tsygankov")?.shirtNumber,11);

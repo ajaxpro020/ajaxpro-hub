@@ -99,7 +99,8 @@ test("publieke spelersendpoint levert alleen actieve spelers en beperkte CORS",a
   assert.equal(response.status,200);
   assert.equal(response.headers.get("Access-Control-Allow-Origin"),"https://opstelling.ajaxpro.fans");
   assert.equal(response.headers.get("Vary"),"Origin");
-  assert.equal(payload.players.length,27);
+  assert.equal(payload.players.length,28);
+  assert.equal(payload.players.some((player:any)=>player.id==="bissouma"),true);
   assert.equal(payload.players.some((player:any)=>player.id==="amrabat"),true);
   assert.equal(payload.players.some((player:any)=>player.id==="tsygankov"),true);
   assert.equal(payload.players.some((player:any)=>player.id==="kehrer"),true);
