@@ -1,6 +1,5 @@
 import { redirect } from "../../lib/discord-auth";
-import { permissions } from "../../lib/permissions.config";
-import { getSessionWithPermission } from "../../lib/server-permissions";
+import { getSessionWithCurrentRoles } from "../../lib/server-permissions";
 import { db } from "../../lib/motm-db";
 import { esc, formatKickoff, formatMoment, page, pageHeader } from "../../lib/motm-view";
 import { synchronizeAllMatches } from "../../lib/motm-scheduling";
@@ -9,7 +8,7 @@ import { statusLabel } from "../../lib/motm-rules";
 const matchRow=(match:any)=>`<a class="match-row${match.own_vote?" match-row--with-vote":""}" href="/club/stemmen/${esc(match.slug)}"><span class="status status-${match.status==="draft"?"planned":esc(match.status)}">${match.status==="draft"?"Gepland":esc(statusLabel(match.status))}</span><span class="match-row__copy"><strong>Ajax — ${esc(match.opponent)}</strong><small>${esc(formatKickoff(match.kickoff_at))}</small>${match.own_vote?`<span class="match-row__vote"><img src="${esc(match.own_vote_image)}" alt=""><span><small>Jouw stem</small><strong>${esc(match.own_vote)}</strong></span></span>`:""}</span><b>Bekijk →</b></a>`;
 
 export async function GET(request:Request){
-  const session=await getSessionWithPermission(request,permissions.portalAccess);
+  const session=await getSessionWithCurrentRoles(request);
   if(!session)return redirect("/api/auth/discord-login?returnTo=/club/motm");
   try{
     await synchronizeAllMatches();

@@ -4,25 +4,29 @@ import type { Session } from "../lib/discord-auth";
 import { readFileSync } from "node:fs";
 import { permissions } from "../lib/permissions.config";
 import {
-  clearManagementPermissionCache,
-  MANAGEMENT_PERMISSION_CACHE_SECONDS,
-  MANAGEMENT_SESSION_MAX_AGE_SECONDS,
+  PORTAL_MEMBERSHIP_CACHE_SECONDS,
+  ROLE_PERMISSION_CACHE_SECONDS,
+  authorizeSessionCurrentRoles,
   authorizeSessionPermission,
+  clearPermissionCache,
+  clearPermissionCacheForUser,
 } from "../lib/server-permissions";
 
 const managerRole = "manager-role";
+const toolRole = "tool-role";
 process.env.MOTM_MANAGER_ROLE_IDS = managerRole;
+process.env.PORTAL_TEAM_TOOL_ROLE_IDS = toolRole;
 
-const session = (roles = [managerRole], issuedAt = 1_000, userId = "user"): Session => ({
+const session = (roles: string[] = [managerRole], issuedAt = 1_000, userId = "user"): Session => ({
   userId,
   username: "Beheerder",
   avatarUrl: "/avatar.png",
   discordRoleIds: roles,
   issuedAt,
-  expiresAt: issuedAt + 8 * 60 * 60,
+  expiresAt: issuedAt + 30 * 24 * 60 * 60,
 });
 
-clearManagementPermissionCache();
+test.beforeEach(() => clearPermissionCache());
 
 test("Discord-rolrefresh gebruikt het Bot-schema en lekt de token niet", () => {
   const source = readFileSync(new URL("../lib/discord-auth.ts", import.meta.url), "utf8");
@@ -31,80 +35,122 @@ test("Discord-rolrefresh gebruikt het Bot-schema en lekt de token niet", () => {
   assert.doesNotMatch(source, /Authorization: `Bearer \$\{botToken\}`/);
 });
 
-test("beheerder met geldige loginrol krijgt binnen één uur beheerrechten", async () => {
-  assert.ok(await authorizeSessionPermission(session([managerRole], 1_000, "valid"), permissions.motmManage, { nowSeconds: 1_001 }));
+test("recente OAuth-snapshot geeft portal-, tool- en beheerrechten zonder extra Discord-call", async () => {
+  let calls = 0;
+  const fetchRoles = async () => { calls += 1; return [managerRole, toolRole]; };
+  const current = session([managerRole, toolRole], 1_000, "recent");
+  assert.ok(await authorizeSessionPermission(current, permissions.portalAccess, { nowSeconds: 1_001, fetchRoles }));
+  assert.ok(await authorizeSessionPermission(current, permissions.toolsSocials, { nowSeconds: 1_001, fetchRoles }));
+  assert.ok(await authorizeSessionPermission(current, permissions.motmManage, { nowSeconds: 1_001, fetchRoles }));
+  assert.equal(calls, 0);
 });
 
-test("beheerrechten blijven geldig tot vlak voor de grens van één uur", async () => {
-  assert.ok(await authorizeSessionPermission(session([managerRole], 1_000, "boundary"), permissions.motmManage, {
-    nowSeconds: 1_000 + MANAGEMENT_SESSION_MAX_AGE_SECONDS - 1,
+test("portal-membership wordt na maximaal één uur opnieuw gecontroleerd", async () => {
+  let calls = 0;
+  const fetchRoles = async () => { calls += 1; return []; };
+  const current = session([], 10_000, "portal-refresh");
+  assert.ok(await authorizeSessionPermission(current, permissions.portalAccess, { nowSeconds: 10_000 + PORTAL_MEMBERSHIP_CACHE_SECONDS - 1, fetchRoles }));
+  assert.equal(calls, 0);
+  assert.ok(await authorizeSessionPermission(current, permissions.portalAccess, { nowSeconds: 10_000 + PORTAL_MEMBERSHIP_CACHE_SECONDS, fetchRoles }));
+  assert.equal(calls, 1);
+});
+
+test("ingetrokken guild-membership weigert portaltoegang na refresh", async () => {
+  const fetchRoles = async () => { throw Object.assign(new Error("Unknown Member"), { status: 404 }); };
+  assert.equal(await authorizeSessionPermission(session([], 20_000, "removed-member"), permissions.portalAccess, {
+    nowSeconds: 20_000 + PORTAL_MEMBERSHIP_CACHE_SECONDS,
+    fetchRoles,
+  }), null);
+});
+
+test("Discord-storing weigert portaltoegang zodra de membership-cache verlopen is", async () => {
+  const fetchRoles = async () => { throw new Error("Discord unavailable"); };
+  const current = session([], 30_000, "portal-outage");
+  assert.ok(await authorizeSessionPermission(current, permissions.portalAccess, { nowSeconds: 30_001, fetchRoles }));
+  assert.equal(await authorizeSessionPermission(current, permissions.portalAccess, {
+    nowSeconds: 30_000 + PORTAL_MEMBERSHIP_CACHE_SECONDS,
+    fetchRoles,
+  }), null);
+});
+
+test("toolrollen worden na maximaal vijftien minuten opnieuw gecontroleerd", async () => {
+  let calls = 0;
+  const fetchRoles = async () => { calls += 1; return [toolRole]; };
+  const current = session([toolRole], 40_000, "tool-refresh");
+  assert.ok(await authorizeSessionPermission(current, permissions.toolsSocials, { nowSeconds: 40_001, fetchRoles }));
+  assert.ok(await authorizeSessionPermission(current, permissions.toolsSocials, {
+    nowSeconds: 40_000 + ROLE_PERMISSION_CACHE_SECONDS,
+    fetchRoles,
+  }));
+  assert.equal(calls, 1);
+});
+
+test("ingetrokken toolrol verdwijnt uit de teruggegeven actuele sessie en weigert toegang", async () => {
+  const current = session([toolRole], 50_000, "removed-tool-role");
+  assert.equal(await authorizeSessionPermission(current, permissions.toolsSocials, {
+    nowSeconds: 50_000 + ROLE_PERMISSION_CACHE_SECONDS,
+    fetchRoles: async () => [],
+  }), null);
+  const portalSession = await authorizeSessionPermission(current, permissions.portalAccess, {
+    nowSeconds: 50_000 + ROLE_PERMISSION_CACHE_SECONDS + 1,
+    fetchRoles: async () => { throw new Error("should use refreshed cache"); },
+  });
+  assert.ok(portalSession);
+  assert.deepEqual(portalSession.discordRoleIds, []);
+});
+
+test("server-rendered navigatie krijgt na vijftien minuten actuele rollen", async () => {
+  const current = session([toolRole], 55_000, "navigation-roles");
+  const refreshed = await authorizeSessionCurrentRoles(current, {
+    nowSeconds: 55_000 + ROLE_PERMISSION_CACHE_SECONDS,
+    fetchRoles: async () => [],
+  });
+  assert.ok(refreshed);
+  assert.deepEqual(refreshed.discordRoleIds, []);
+});
+
+test("ingetrokken beheerrol weigert beheer maar behoudt guild-membership", async () => {
+  const current = session([managerRole], 60_000, "removed-manager-role");
+  assert.equal(await authorizeSessionPermission(current, permissions.motmManage, {
+    nowSeconds: 60_000 + ROLE_PERMISSION_CACHE_SECONDS,
+    fetchRoles: async () => [],
+  }), null);
+  assert.ok(await authorizeSessionPermission(current, permissions.portalAccess, {
+    nowSeconds: 60_000 + ROLE_PERMISSION_CACHE_SECONDS + 1,
+  }));
+});
+
+test("beheerrechten hebben geen aparte één-uurs expiry meer", async () => {
+  const current = session([managerRole], 70_000, "long-manager-session");
+  assert.ok(await authorizeSessionPermission(current, permissions.motmManage, {
+    nowSeconds: 70_000 + 12 * 60 * 60,
     fetchRoles: async () => [managerRole],
   }));
 });
 
-test("beheerrechten vervallen exact één uur na Discord-login", async () => {
-  assert.equal(await authorizeSessionPermission(session([managerRole], 1_000, "expired"), permissions.motmManage, {
-    nowSeconds: 1_000 + MANAGEMENT_SESSION_MAX_AGE_SECONDS,
-  }), null);
-});
-
-test("een oude sessierol kan na één uur geen beheerpagina of mutatie autoriseren", async () => {
-  for (const permission of [permissions.motmManage, permissions.motmDelete, permissions.adminManage]) {
-    assert.equal(await authorizeSessionPermission(session([managerRole], 1_000, "old"), permission, {
-      nowSeconds: 1_000 + MANAGEMENT_SESSION_MAX_AGE_SECONDS,
-    }), null);
-  }
-});
-
-test("gebruiker zonder beheerrol krijgt ook binnen één uur geen beheerrechten", async () => {
-  assert.equal(await authorizeSessionPermission(session([], 1_000, "no-role"), permissions.motmManage, { nowSeconds: 1_001 }), null);
-});
-
-test("bestaande environment-permissionmapping blijft leidend", async () => {
-  assert.ok(await authorizeSessionPermission(session([managerRole], 1_000, "mapping-manager"), permissions.motmManage, { nowSeconds: 1_001 }));
-  assert.equal(await authorizeSessionPermission(session(["unknown"], 1_000, "mapping-unknown"), permissions.motmManage, { nowSeconds: 1_001 }), null);
-});
-
-test("beheerrechten verversen Discord-rollen na maximaal vijftien minuten", async () => {
+test("lege cache na cold start voert voor een oude sessie veilig een Discord-check uit", async () => {
   let calls = 0;
-  const fetchRoles = async () => { calls += 1; return [managerRole]; };
-  assert.ok(await authorizeSessionPermission(session([managerRole], 10_000), permissions.motmManage, { nowSeconds: 10_001, fetchRoles }));
-  assert.equal(calls, 0, "de recente login-snapshot mag als korte cache dienen");
-  assert.ok(await authorizeSessionPermission(session([managerRole], 10_000), permissions.motmManage, { nowSeconds: 10_000 + MANAGEMENT_PERMISSION_CACHE_SECONDS, fetchRoles }));
+  clearPermissionCache();
+  assert.ok(await authorizeSessionPermission(session([], 80_000, "cold-start"), permissions.portalAccess, {
+    nowSeconds: 80_000 + PORTAL_MEMBERSHIP_CACHE_SECONDS,
+    fetchRoles: async () => { calls += 1; return []; },
+  }));
   assert.equal(calls, 1);
 });
 
-test("verloren Discord-rol wordt na cacheverval geweigerd", async () => {
-  const fetchRoles = async () => [];
-  assert.ok(await authorizeSessionPermission(session([managerRole], 20_000), permissions.motmManage, { nowSeconds: 20_001, fetchRoles }));
-  assert.equal(await authorizeSessionPermission(session([managerRole], 20_000), permissions.motmManage, { nowSeconds: 20_000 + MANAGEMENT_PERMISSION_CACHE_SECONDS, fetchRoles }), null);
-  assert.equal(await authorizeSessionPermission(session([managerRole], 20_000), permissions.motmDelete, { nowSeconds: 20_000 + MANAGEMENT_PERMISSION_CACHE_SECONDS, fetchRoles }), null);
-});
-
-test("verlopen cache plus Discord-storing weigert beheerrechten fail-closed", async () => {
-  const fetchRoles = async () => { throw new Error("Discord unavailable"); };
-  assert.ok(await authorizeSessionPermission(session([managerRole], 30_000), permissions.motmManage, { nowSeconds: 30_001, fetchRoles }));
-  assert.equal(await authorizeSessionPermission(session([managerRole], 30_000), permissions.motmManage, { nowSeconds: 30_000 + MANAGEMENT_PERMISSION_CACHE_SECONDS, fetchRoles }), null);
-});
-
-test("portal.access gebruikt geen Discord permission refresh", async () => {
-  let called = false;
-  const fetchRoles = async () => { called = true; return []; };
-  assert.ok(await authorizeSessionPermission(session([], 40_000), permissions.portalAccess, { nowSeconds: 40_001, fetchRoles }));
-  assert.equal(called, false);
-});
-
-test("gewone portaltoegang behoudt de acht uur geldige sessie", async () => {
-  assert.ok(await authorizeSessionPermission(session([], 1_000), permissions.portalAccess, {
-    nowSeconds: 1_000 + 7 * 60 * 60,
+test("cache is per gebruiker en kan bij logout gericht worden verwijderd", async () => {
+  let calls = 0;
+  const current = session([toolRole], 90_000, "logout-user");
+  assert.ok(await authorizeSessionPermission(current, permissions.toolsSocials, { nowSeconds: 90_001 }));
+  clearPermissionCacheForUser(current.userId);
+  assert.ok(await authorizeSessionPermission(current, permissions.toolsSocials, {
+    nowSeconds: 90_000 + ROLE_PERMISSION_CACHE_SECONDS,
+    fetchRoles: async () => { calls += 1; return [toolRole]; },
   }));
+  assert.equal(calls, 1);
 });
 
-test("ongeldige issuedAt kan nooit beheerrechten verlenen", async () => {
-  assert.equal(await authorizeSessionPermission({ ...session([managerRole], 1_000, "nan"), issuedAt: Number.NaN }, permissions.motmManage, {
-    nowSeconds: 1_001,
-  }), null);
-  assert.equal(await authorizeSessionPermission({ ...session([managerRole], 1_000, "future"), issuedAt: 2_000 }, permissions.motmManage, {
-    nowSeconds: 1_001,
-  }), null);
+test("ongeldige issuedAt kan nooit permissions verlenen", async () => {
+  assert.equal(await authorizeSessionPermission({ ...session([], 1_000, "nan"), issuedAt: Number.NaN }, permissions.portalAccess, { nowSeconds: 1_001 }), null);
+  assert.equal(await authorizeSessionPermission({ ...session([], 1_000, "future"), issuedAt: 2_000 }, permissions.portalAccess, { nowSeconds: 1_001 }), null);
 });

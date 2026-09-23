@@ -2,8 +2,10 @@ import {
   clearSessionCookie,
   isSameOrigin,
   noStoreHeaders,
+  readSession,
   redirect,
 } from "../../lib/discord-auth";
+import { clearPermissionCacheForUser } from "../../lib/server-permissions";
 
 export async function POST(request: Request) {
   if (request.method !== "POST") {
@@ -20,5 +22,7 @@ export async function POST(request: Request) {
     });
   }
 
+  const session = await readSession(request);
+  if (session) clearPermissionCacheForUser(session.userId);
   return redirect("/", { "Set-Cookie": clearSessionCookie() });
 }

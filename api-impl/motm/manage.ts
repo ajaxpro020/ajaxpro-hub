@@ -73,7 +73,7 @@ async function detail(request:Request,session:Session,id:string,activePlayers:re
 }
 
 export async function GET(request:Request){
-  const session=await manager(request);if(!session)return errorPage("Beheersessie verlopen","Log opnieuw in via Discord om je beheerrechten te vernieuwen.",403);
+  const session=await manager(request);if(!session)return errorPage("Geen beheerrechten","Je actuele Discord-rollen geven geen toegang tot MOTM-beheer.",403);
   const view=query(request).get("view")??"list",id=query(request).get("id");
   try{
     await synchronizeAllMatches();
@@ -91,7 +91,7 @@ export async function GET(request:Request){
 
 export async function POST(request:Request){
   if(!isSameOrigin(request))return errorPage("Ongeldige aanvraag","Ververs de pagina.",403);
-  const session=await manager(request);if(!session)return errorPage("Beheersessie verlopen","Log opnieuw in via Discord om je beheerrechten te vernieuwen.",403);
+  const session=await manager(request);if(!session)return errorPage("Geen beheerrechten","Je actuele Discord-rollen geven geen toegang tot MOTM-beheer.",403);
   const id=query(request).get("id");
   const form=await readFormDataWithLimits(request, { maxBytes: MOTM_MANAGE_MAX_BODY_BYTES, maxFields: MOTM_MANAGE_MAX_FORM_FIELDS });
   if (form instanceof Response) return form;

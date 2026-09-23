@@ -1,6 +1,6 @@
 import { isSameOrigin, redirect } from "../../lib/discord-auth";
 import { permissions } from "../../lib/permissions.config";
-import { getSessionWithPermission } from "../../lib/server-permissions";
+import { getSessionWithCurrentRoles, getSessionWithPermission } from "../../lib/server-permissions";
 import { db, resultsFor } from "../../lib/motm-db";
 import { MOTM_VOTE_RATE_LIMIT_SECONDS, saveVoteAtomically } from "../../lib/motm-voting";
 import { esc, errorPage, formatMoment, matchHeading, matchTitle, page, pageHeader } from "../../lib/motm-view";
@@ -10,7 +10,7 @@ import { MOTM_VOTE_MAX_BODY_BYTES, MOTM_VOTE_MAX_FORM_FIELDS, readFormDataWithLi
 const slugOf = (request: Request) => new URL(request.url).searchParams.get("slug")?.trim() ?? "";
 export async function GET(request: Request) {
   const slug = slugOf(request);
-  const session = await getSessionWithPermission(request, permissions.portalAccess);
+  const session = await getSessionWithCurrentRoles(request);
   if (!session) return redirect(`/api/auth/discord-login?returnTo=${encodeURIComponent(`/club/stemmen/${slug}`)}`);
   try {
     let [match] = await db()`SELECT * FROM motm_matches WHERE slug=${slug} AND deleted_at IS NULL`;

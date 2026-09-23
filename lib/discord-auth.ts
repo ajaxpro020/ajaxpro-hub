@@ -3,7 +3,7 @@ const OAUTH_STATE_COOKIE = "ajaxpro_oauth_state";
 const OAUTH_RETURN_COOKIE = "ajaxpro_oauth_return";
 const SESSION_COOKIE = "ajaxpro_session";
 const STATE_MAX_AGE_SECONDS = 10 * 60;
-const SESSION_MAX_AGE_SECONDS = 8 * 60 * 60;
+export const SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
 type DiscordUser = {
   id: string;

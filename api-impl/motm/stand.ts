@@ -1,6 +1,5 @@
 import { redirect } from "../../lib/discord-auth";
-import { permissions } from "../../lib/permissions.config";
-import { getSessionWithPermission } from "../../lib/server-permissions";
+import { getSessionWithCurrentRoles } from "../../lib/server-permissions";
 import { db } from "../../lib/motm-db";
 import { buildSeasonStandings, seasonKeyFor, type SeasonMatch, validSeasonKey } from "../../lib/motm-season";
 import { esc, errorPage, formatKickoff, matchTitle, page, pageHeader } from "../../lib/motm-view";
@@ -10,7 +9,7 @@ const playerRow=(row:any)=>({player_id:String(row.player_id),name_snapshot:Strin
 const podiumCard=(row:any)=>`<article class="standing-podium__card standing-podium__card--${row.position}"><div class="standing-rank"><span class="standing-position">${row.position}</span><small>${row.position===1?"Koploper":`${row.position}e plaats`}</small></div><img src="${esc(row.image_url_snapshot)}" alt=""><div class="standing-podium__copy"><strong>${esc(row.name_snapshot)}</strong><span>${row.points} punten</span><small>${row.firsts} ${row.firsts===1?"MOTM-overwinning":"MOTM-overwinningen"}</small></div></article>`;
 
 export async function GET(request:Request){
-  const session=await getSessionWithPermission(request,permissions.portalAccess);if(!session)return redirect("/api/auth/discord-login?returnTo=/club/stand");
+  const session=await getSessionWithCurrentRoles(request);if(!session)return redirect("/api/auth/discord-login?returnTo=/club/stand");
   const requested=new URL(request.url).searchParams.get("season"),season=requested??seasonKeyFor(new Date());if(!validSeasonKey(season))return errorPage("Ongeldig seizoen","Kies een geldig seizoen, bijvoorbeeld 2026-27.",400,session,"/club/stand","stand");
   try{
     await synchronizeAllMatches();

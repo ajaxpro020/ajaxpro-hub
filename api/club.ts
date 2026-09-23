@@ -1,6 +1,5 @@
 import { redirect } from "../lib/discord-auth";
-import { permissions } from "../lib/permissions.config";
-import { getSessionWithPermission } from "../lib/server-permissions";
+import { getSessionWithCurrentRoles } from "../lib/server-permissions";
 import { db, resultsFor } from "../lib/motm-db";
 import { esc, formatMoment, matchTitle, page, remainingTime } from "../lib/motm-view";
 import { synchronizeAllMatches } from "../lib/motm-scheduling";
@@ -9,7 +8,7 @@ import { clubIntroForSession } from "../lib/portal-tools.config";
 import { createMotmVisualData, MOTM_VISUAL_HEIGHT, MOTM_VISUAL_TEMPLATE_URL, MOTM_VISUAL_WIDTH } from "../lib/motm-visual";
 
 export async function GET(request:Request){
-  const session=await getSessionWithPermission(request,permissions.portalAccess);if(!session)return redirect("/api/auth/discord-login");
+  const session=await getSessionWithCurrentRoles(request);if(!session)return redirect("/api/auth/discord-login");
   let spotlight=`<section class="club-spotlight unavailable"><div><span class="status">Geen stemming</span><p class="eyebrow">Man of the Match</p><h2>Nog geen stemming</h2><p>Zodra er een stemming klaarstaat, verschijnt die hier.</p></div></section>`;
   try{
     await synchronizeAllMatches();
