@@ -10,6 +10,15 @@ const contextFor=fixture=>{
   return {opponent:home?fixture.away_team:fixture.home_team,ajaxScore:home?fixture.goals_home:fixture.goals_away,opponentScore:home?fixture.goals_away:fixture.goals_home,competition:fixture.competition,kickoff:fixture.kickoff_at};
 };
 const formatDate=value=>new Intl.DateTimeFormat("nl-NL",{weekday:"short",day:"numeric",month:"long",year:"numeric",timeZone:"Europe/Amsterdam"}).format(new Date(value));
+const normalizeName=value=>String(value??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("nl-NL").replace(/[^a-z0-9]+/g," ").trim();
+const providerPlayerFor=(player,providerPlayers)=>{
+  const expected=normalizeName(player?.name);
+  if(!expected)return null;
+  const exact=providerPlayers.find(candidate=>normalizeName(candidate?.name)===expected);
+  if(exact)return exact;
+  const expectedLast=expected.split(" ").at(-1);
+  return providerPlayers.find(candidate=>normalizeName(candidate?.name).split(" ").at(-1)===expectedLast)??null;
+};
 
 export const initPlayerStats=(root,sharedState)=>{
   const workspace=root.querySelector("[data-player-stats-workspace]");
@@ -22,8 +31,30 @@ export const initPlayerStats=(root,sharedState)=>{
   const outputInputs=[...root.querySelectorAll('[name="social-output"]')];
   const preview=workspace.querySelector("[data-player-stats-preview]");
   const resetButton=workspace.querySelector("[data-player-stats-reset]");
+  const sourceStatus=workspace.querySelector("[data-player-stats-source-status]");
+  let providerPlayers=[],loadedFixtureKey="",loadingFixtureKey="";
   const playerForSelection=()=>players.find(player=>player.id===playerSelect?.value)??players[0];
   const fixtureForSelection=()=>fixtures.find(fixture=>fixture.fixture_key===matchSelect?.value)??fixtures[0];
+  const applyProviderStats=()=>{
+    const providerPlayer=providerPlayerFor(playerForSelection(),providerPlayers);
+    inputs.forEach(input=>{const value=providerPlayer?.stats?.[input.dataset.playerStatId];input.value=value===null||value===undefined?"":String(value)});
+    if(sourceStatus)sourceStatus.textContent=providerPlayer?"Automatisch ingevuld vanuit de wedstrijddata.":providerPlayers.length?"Voor deze speler zijn geen wedstrijdstatistieken gevonden.":"Voor deze wedstrijd zijn geen spelerstatistieken beschikbaar.";
+  };
+  const loadProviderStats=async()=>{
+    const fixture=fixtureForSelection(),fixtureKey=fixture?.fixture_key;
+    if(!fixtureKey||loadingFixtureKey===fixtureKey||loadedFixtureKey===fixtureKey)return;
+    loadingFixtureKey=fixtureKey;
+    if(sourceStatus)sourceStatus.textContent="Spelerstatistieken laden…";
+    try{
+      const response=await fetch(`/api/club-tools?view=socials-player-stats&fixture=${encodeURIComponent(fixtureKey)}`,{headers:{Accept:"application/json"}});
+      const payload=await response.json();
+      if(!response.ok)throw new Error(payload?.error||"Spelerstatistieken laden mislukt.");
+      providerPlayers=Array.isArray(payload?.players)?payload.players:[];
+      loadedFixtureKey=fixtureKey;
+      applyProviderStats();
+    }catch(error){providerPlayers=[];loadedFixtureKey=fixtureKey;if(sourceStatus)sourceStatus.textContent=error instanceof Error?error.message:"Spelerstatistieken zijn tijdelijk niet beschikbaar."}
+    finally{loadingFixtureKey="";render()}
+  };
   const render=()=>{
     const player=playerForSelection(),context=contextFor(fixtureForSelection());
     workspace.querySelector("[data-player-preview-name]").textContent=player?.name??"Speler";
@@ -37,8 +68,8 @@ export const initPlayerStats=(root,sharedState)=>{
     if(output){preview.dataset.aspect=output.value;workspace.querySelector("[data-player-preview-ratio]").textContent=output.value==="vertical-9x16"?"9:16":"4:5";workspace.querySelector("[data-player-preview-dimensions]").textContent=`${output.dataset.width} × ${output.dataset.height}`}
     preview.dataset.theme=sharedState.theme;workspace.querySelector("[data-player-preview-theme]").textContent=`Thema: ${sharedState.themeLabel} · ${sharedState.theme}`;
   };
-  playerSelect?.addEventListener("change",render);matchSelect?.addEventListener("change",render);inputs.forEach(input=>input.addEventListener("input",render));outputInputs.forEach(input=>input.addEventListener("change",render));
+  playerSelect?.addEventListener("change",()=>{applyProviderStats();render()});matchSelect?.addEventListener("change",()=>{providerPlayers=[];loadedFixtureKey="";loadProviderStats();render()});inputs.forEach(input=>input.addEventListener("input",render));outputInputs.forEach(input=>input.addEventListener("change",render));
   resetButton?.addEventListener("click",()=>{inputs.forEach(input=>{input.value="";input.removeAttribute("aria-invalid")});render()});
   render();
-  return {activate:render,deactivate(){}};
+  return {activate(){render();loadProviderStats()},deactivate(){}};
 };

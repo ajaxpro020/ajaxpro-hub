@@ -1,19 +1,54 @@
 import { redirect } from "../lib/discord-auth";
 import { permissions } from "../lib/permissions.config";
-import { getSessionWithPermission } from "../lib/server-permissions";
+import { getSessionWithCurrentRoles, getSessionWithPermission } from "../lib/server-permissions";
 import { errorPage, page, pageHeader } from "../lib/motm-view";
 import { renderToolsGrid, toolsForSession } from "../lib/portal-tools.config";
 import { renderSocials } from "../api-impl/socials/index";
+import { loadSocialPlayerStats, SocialPlayerStatsProviderError } from "../lib/socials-player-stats-provider";
+import { loadSocialsMatchStats, SocialsMatchStatsError } from "../lib/socials-match-stats";
+import { loadSocialsMatchStatsSnapshot, saveSocialsMatchStatsSnapshot } from "../lib/socials-stats-snapshots";
+
+const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json; charset=UTF-8","Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff"}});
+const playerStatsCache=new Map<string,{expiresAt:number;payload:Awaited<ReturnType<typeof loadSocialPlayerStats>>}>();
+const cachedPlayerStats=async(fixtureKey:string)=>{
+  const cached=playerStatsCache.get(fixtureKey),now=Date.now();
+  if(cached&&cached.expiresAt>now)return cached.payload;
+  const payload=await loadSocialPlayerStats(fixtureKey);
+  playerStatsCache.set(fixtureKey,{expiresAt:now+5*60_000,payload});
+  return payload;
+};
 
 export async function GET(request:Request){
   const view=new URL(request.url).searchParams.get("view");
-  const returnTo=view==="socials"?"/club/tools/socials":"/club/tools";
-  const session=await getSessionWithPermission(request,permissions.portalAccess);
+  const returnTo=view==="socials"||view==="socials-player-stats"||view==="socials-match-stats"?"/club/tools/socials":"/club/tools";
+  const session=await getSessionWithCurrentRoles(request);
   if(!session)return redirect(`/api/auth/discord-login?returnTo=${returnTo}`);
   if(view==="socials"){
     const allowed=await getSessionWithPermission(request,permissions.toolsSocials);
     if(!allowed)return errorPage("Geen toegang","Voor jouw Club-account is Socials niet beschikbaar.",403,session,"/club/tools","tools");
     return renderSocials(allowed);
+  }
+  if(view==="socials-player-stats"){
+    const allowed=await getSessionWithPermission(request,permissions.toolsSocials);
+    if(!allowed)return json({error:"forbidden"},403);
+    const fixtureKey=new URL(request.url).searchParams.get("fixture")??"";
+    try{return json(await cachedPlayerStats(fixtureKey));}
+    catch(error){
+      if(error instanceof SocialPlayerStatsProviderError)return json({error:error.message},error.status);
+      console.error("Unable to load Socials player statistics",error);
+      return json({error:"Spelerstatistieken zijn tijdelijk niet beschikbaar."},500);
+    }
+  }
+  if(view==="socials-match-stats"){
+    const allowed=await getSessionWithPermission(request,permissions.toolsSocials);
+    if(!allowed)return json({error:"forbidden"},403);
+    const fixtureKey=new URL(request.url).searchParams.get("fixture")??"";
+    try{const snapshot=await loadSocialsMatchStatsSnapshot(fixtureKey);return snapshot?json(snapshot):json({error:"Nog geen stats opgeslagen."},404);}
+    catch(error){
+      if(error instanceof SocialsMatchStatsError)return json({error:error.message},error.status);
+      console.error("Unable to load normalized Socials match statistics",error);
+      return json({error:"Fout bij ophalen."},500);
+    }
   }
   const tools=toolsForSession(session);
   if(!tools.length)return errorPage("Geen toegang","Voor jouw Club-account zijn geen interne tools beschikbaar.",403,session,"/club","home");
@@ -21,5 +56,17 @@ export async function GET(request:Request){
 }
 
 export async function POST(request:Request){
-  return new Response("Method not allowed",{status:405,headers:{Allow:"GET"}});
+  const view=new URL(request.url).searchParams.get("view");
+  const session=await getSessionWithPermission(request,permissions.portalAccess);
+  if(!session)return new Response("Unauthorized",{status:401});
+  if(view!=="socials-match-stats-import")return new Response("Method not allowed",{status:405,headers:{Allow:"GET"}});
+  const allowed=await getSessionWithPermission(request,permissions.toolsSocials);
+  if(!allowed)return json({error:"forbidden"},403);
+  let fixtureKey="";try{fixtureKey=String((await request.json())?.fixture??"")}catch{return json({error:"Ongeldige wedstrijd."},400)}
+  try{return json(await saveSocialsMatchStatsSnapshot(await loadSocialsMatchStats(fixtureKey)));}
+  catch(error){
+    if(error instanceof SocialsMatchStatsError)return json({error:error.message},error.status);
+    console.error("Unable to import Socials match statistics",error);
+    return json({error:"Fout bij ophalen."},500);
+  }
 }

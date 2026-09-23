@@ -1,7 +1,7 @@
 export type SocialMatchContextRequirement = "required" | "optional" | "none";
 
 export type SocialFormatDefinition = {
-  id: "stats" | "quote" | "player-stats";
+  id: "stats" | "outblinker" | "top-three" | "quote";
   title: string;
   description: string;
   matchContext: SocialMatchContextRequirement;
@@ -23,9 +23,10 @@ export type SocialThemeDefinition = {
 };
 
 export const socialFormats: readonly SocialFormatDefinition[] = [
-  {id:"stats",title:"Stats",description:"Vaste wedstrijdstatistieken voor Ajax en de tegenstander.",matchContext:"required",availability:"available"},
-  {id:"quote",title:"Quote",description:"Een vaste AjaxPro-quotevisual.",matchContext:"optional",availability:"available"},
-  {id:"player-stats",title:"Spelerstats",description:"Vaste individuele wedstrijdstatistieken voor een Ajax-speler.",matchContext:"required",availability:"available"},
+  {id:"stats",title:"Wedstrijd in cijfers",description:"Het wedstrijdverhaal in score, xG en vier kernstatistieken.",matchContext:"required",availability:"available"},
+  {id:"outblinker",title:"Uitblinker",description:"Eén Ajax-speler en zijn bepalende wedstrijdstatistieken.",matchContext:"required",availability:"available"},
+  {id:"top-three",title:"Top 3 spelers",description:"Drie zelfgekozen Ajax-spelers in één editorial compositie.",matchContext:"required",availability:"available"},
+  {id:"quote",title:"Quote",description:"Een redactionele quotevisual met eigen beeld en afzender.",matchContext:"none",availability:"available"},
 ];
 
 export const socialOutputFormats: readonly SocialOutputFormat[] = [

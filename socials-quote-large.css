@@ -1,0 +1,59 @@
+/* Quote groot is a dedicated poster composition. Quote klein remains in socials.css. */
+.quote-editorial-preview[data-variant=large]{grid-template-rows:8% minmax(0,1fr) 5%;background:radial-gradient(circle at 82% 25%,rgba(176,0,41,.29),transparent 30%),linear-gradient(125deg,#080809 0%,#160409 62%,#050506 100%)}
+.quote-editorial-preview[data-variant=large] .quote-editorial-preview__wash{background:linear-gradient(90deg,rgba(3,3,4,.97) 0%,rgba(3,3,4,.9) 39%,rgba(3,3,4,.56) 56%,rgba(3,3,4,.1) 82%,rgba(3,3,4,.04) 100%),linear-gradient(0deg,rgba(3,3,4,.64) 0%,transparent 42%)}
+.quote-editorial-preview[data-variant=large] header{z-index:6;padding-top:3.7cqw}
+.quote-editorial-preview[data-variant=large] blockquote{z-index:5;align-self:start;box-sizing:border-box;width:60%;max-width:60%;padding:13cqw 1.5cqw 0 5.2cqw;font-size:clamp(32px,8.7cqw,84px);line-height:.92;overflow-wrap:normal;word-break:normal;hyphens:none;text-wrap:balance;text-shadow:0 .55cqw 1.8cqw rgba(0,0,0,.42)}
+.quote-editorial-preview[data-variant=large][data-density=medium] blockquote{font-size:clamp(28px,7.3cqw,70px);line-height:.96}
+.quote-editorial-preview[data-variant=large][data-density=long] blockquote{font-size:clamp(24px,6.1cqw,58px);line-height:1}
+
+/* The full-width subject plane lets every transparent source reach a meaningful scale. */
+.quote-editorial-preview[data-variant=large] .quote-editorial-preview__person{position:absolute;z-index:3;right:0;bottom:5%;width:100%;height:91%;display:block;padding:0;pointer-events:none}
+.quote-editorial-preview[data-variant=large] .quote-editorial-preview__portrait{position:absolute;right:4cqw;bottom:0;width:60cqw;height:92%;overflow:visible;border:0;border-radius:0;background:transparent}
+.quote-editorial-preview[data-variant=large] .quote-editorial-preview__portrait img{display:block;width:100%;height:100%;object-fit:contain;object-position:center bottom;transform:none}
+.quote-editorial-preview[data-variant=large] .quote-editorial-preview__portrait span{display:none}
+
+/* Quote-only cutouts retain their source canvas. These crops normalize the
+   visible subject while keeping the face inside the 7.5cqw right safe area. */
+.quote-editorial-preview[data-variant=large] .quote-editorial-preview__portrait:has(img[src$="/michel.png"]){right:-44.5cqw;width:120cqw;height:87%}
+.quote-editorial-preview[data-variant=large] .quote-editorial-preview__portrait:has(img[src$="/jordi-cruijff.png"]){right:7.5cqw;width:84cqw;height:87%}
+.quote-editorial-preview[data-variant=large] .quote-editorial-preview__portrait:has(img[src$="/shashi-baboeram-panday.png"]){right:-2cqw;width:63cqw;height:87%}
+.quote-editorial-preview[data-variant=large] .quote-editorial-preview__portrait:has(img[src$="/menno-geelen.png"]){right:-14cqw;width:98cqw;height:87%}
+
+/* Attribution sits in the safe lower-left field, tied to the subject by a quiet red rule. */
+.quote-editorial-preview[data-variant=large] .quote-editorial-preview__person>div:last-child{position:absolute;z-index:6;left:5.2cqw;top:65cqw;display:grid;gap:.65cqw;max-width:48%;padding:0 0 0 2cqw;border-left:2px solid var(--quote-red);text-align:left;text-shadow:0 .45cqw 1.4cqw rgba(0,0,0,.58)}
+.quote-editorial-preview[data-variant=large][data-density=medium] .quote-editorial-preview__person>div:last-child{top:73cqw}
+.quote-editorial-preview[data-variant=large][data-density=long] .quote-editorial-preview__person>div:last-child{top:auto;bottom:7.2cqw}
+.quote-editorial-preview[data-variant=large] .quote-editorial-preview__person strong{font-size:4.3cqw;line-height:.92}
+.quote-editorial-preview[data-variant=large] .quote-editorial-preview__person>div:last-child span{margin:0;font-size:1.65cqw}
+.quote-editorial-preview[data-variant=large] .quote-editorial-preview__inset{z-index:6;right:5cqw;bottom:12cqw;width:18%;border-color:rgba(245,242,235,.48);opacity:.9}
+
+/* The footer is intentionally compact: it closes the poster, it is not a content panel. */
+.quote-editorial-preview[data-variant=large] footer{z-index:7;min-height:0;padding:0 5.2cqw}
+.quote-editorial-preview[data-variant=large] footer strong{font-size:3.2cqw}
+.quote-editorial-preview[data-variant=large] footer span{font-size:1.35cqw}
+
+/* 9:16 is composed vertically: more body, a higher quote and the same compact closure. */
+.quote-editorial-preview[data-aspect=vertical-9x16][data-variant=large]{grid-template-rows:7% minmax(0,1fr) 4.5%}
+.quote-editorial-preview[data-aspect=vertical-9x16][data-variant=large] header{padding-top:4.2cqw}
+.quote-editorial-preview[data-aspect=vertical-9x16][data-variant=large] blockquote{width:61%;max-width:61%;padding-top:18cqw;font-size:clamp(34px,9.4cqw,90px);line-height:.92;text-shadow:0 .65cqw 2cqw rgba(0,0,0,.46)}
+.quote-editorial-preview[data-aspect=vertical-9x16][data-variant=large][data-density=medium] blockquote{font-size:clamp(30px,7.8cqw,75px);line-height:.96}
+.quote-editorial-preview[data-aspect=vertical-9x16][data-variant=large][data-density=long] blockquote{font-size:clamp(25px,6.4cqw,62px);line-height:1}
+.quote-editorial-preview[data-aspect=vertical-9x16][data-variant=large] .quote-editorial-preview__person{bottom:4.5%;height:94%}
+.quote-editorial-preview[data-aspect=vertical-9x16][data-variant=large] .quote-editorial-preview__portrait{right:1cqw;bottom:0;width:72cqw;height:94%}
+.quote-editorial-preview[data-aspect=vertical-9x16][data-variant=large] .quote-editorial-preview__portrait:has(img[src$="/michel.png"]){right:-44.5cqw;width:120cqw;height:84%}
+.quote-editorial-preview[data-aspect=vertical-9x16][data-variant=large] .quote-editorial-preview__portrait:has(img[src$="/jordi-cruijff.png"]){right:7.5cqw;width:84cqw;height:84%}
+.quote-editorial-preview[data-aspect=vertical-9x16][data-variant=large] .quote-editorial-preview__portrait:has(img[src$="/shashi-baboeram-panday.png"]){right:-2cqw;width:63cqw;height:84%}
+.quote-editorial-preview[data-aspect=vertical-9x16][data-variant=large] .quote-editorial-preview__portrait:has(img[src$="/menno-geelen.png"]){right:-14cqw;width:98cqw;height:84%}
+.quote-editorial-preview[data-aspect=vertical-9x16][data-variant=large] .quote-editorial-preview__person>div:last-child{top:82cqw;bottom:auto;max-width:50%;padding-left:2.2cqw}
+.quote-editorial-preview[data-aspect=vertical-9x16][data-variant=large][data-density=medium] .quote-editorial-preview__person>div:last-child{top:100cqw}
+.quote-editorial-preview[data-aspect=vertical-9x16][data-variant=large][data-density=long] .quote-editorial-preview__person>div:last-child{top:auto;bottom:9cqw}
+.quote-editorial-preview[data-aspect=vertical-9x16][data-variant=large] .quote-editorial-preview__person strong{font-size:5cqw}
+.quote-editorial-preview[data-aspect=vertical-9x16][data-variant=large] .quote-editorial-preview__person>div:last-child span{font-size:1.9cqw}
+.quote-editorial-preview[data-aspect=vertical-9x16][data-variant=large] .quote-editorial-preview__inset{bottom:16cqw;width:19%}
+.quote-editorial-preview[data-aspect=vertical-9x16][data-variant=large] footer strong{font-size:3.7cqw}
+.quote-editorial-preview[data-aspect=vertical-9x16][data-variant=large] footer span{font-size:1.55cqw}
+
+/* Stable export endpoint below the preview. */
+.quote-editorial-preview+.socials-download{display:flex;box-sizing:border-box;width:min(100%,480px);min-height:48px;align-items:center;justify-content:center;margin:16px auto 0;padding:10px 16px;text-align:center}
+.quote-editorial-preview+.socials-download:disabled{opacity:1}
+.socials-workspace[data-format-workspace=quote] .socials-preview-panel{padding-bottom:16px}
