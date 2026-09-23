@@ -10,7 +10,7 @@
 
 .contracts-hero h1 {
   max-width: 760px;
-  margin-top: 10px;
+  margin-top: 0;
   font-size: clamp(3rem, 9vw, 4.75rem);
   letter-spacing: -0.035em;
   line-height: 0.94;
@@ -214,7 +214,7 @@
   overflow-wrap: anywhere;
   margin-top: 5px;
   color: var(--text);
-  font-size: 0.82rem;
+  font-size: 0.94rem;
   font-weight: 850;
   line-height: 1.35;
 }
@@ -229,8 +229,29 @@
 
 .contract-card--incoming,
 .contract-card--loan {
+  position: relative;
   border-color: rgba(126, 155, 212, 0.42);
   background: #0d1420;
+}
+
+.contract-card--incoming::before,
+.contract-card--loan::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 1px;
+  background: rgba(126, 155, 212, 0.72);
+  content: "";
+}
+
+.contract-card--incoming .contract-card__type--loan::before,
+.contract-card--loan .contract-card__type--loan::before {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin: 0 6px 1px 0;
+  border-radius: 50%;
+  background: #8ca9df;
+  content: "";
 }
 
 .contract-card--incoming .contract-card__facts,
@@ -283,6 +304,7 @@
   color: #929daf;
   font-size: 0.66rem;
   font-weight: 650;
+  line-height: 1.35;
 }
 
 .loan-deal__summary-meta {
@@ -320,6 +342,39 @@
   font-weight: 850;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.arrival-deal__overview {
+  display: grid;
+  gap: 0;
+  margin: 4px 0 16px;
+  border: 1px solid #263143;
+  border-radius: 10px;
+  background: #080e17;
+}
+
+.arrival-deal__overview div {
+  padding: 10px 12px;
+}
+
+.arrival-deal__overview div + div {
+  border-top: 1px solid #263143;
+}
+
+.arrival-deal__overview dt {
+  color: #929daf;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.arrival-deal__overview dd {
+  margin: 4px 0 0;
+  color: var(--text);
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.4;
 }
 
 .loan-deal__terms {
@@ -392,6 +447,15 @@
   .contract-card--loan .contract-card__facts {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  .arrival-deal__overview {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .arrival-deal__overview div + div {
+    border-top: 0;
+    border-left: 1px solid #263143;
+  }
 }
 
 @media (min-width: 760px) {
@@ -422,6 +486,9 @@
   .contract-year__heading {
     display: block;
     margin: 0;
+    position: sticky;
+    top: 88px;
+    align-self: start;
   }
 
   .contract-year__heading span {

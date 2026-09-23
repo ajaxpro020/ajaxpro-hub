@@ -1,8 +1,10 @@
 # Product
 
-## Register
+<!-- impeccable:product-schema 1 -->
 
-product
+## Platform
+
+web
 
 ## Users
 

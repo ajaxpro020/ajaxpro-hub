@@ -52,6 +52,34 @@ test("deadline day-mutaties worden via de centrale spelersregistratie uitgerold"
   assert.match(migration,/contract_end = '2029-06-30' WHERE id = 'dies-janse'/);
 });
 
+test("herkomst en transferconstructie staan centraal en blijven transparant",()=>{
+  const migration=read("../db/migrations/028_add_arrival_deal_details.sql");
+  const registry=read("../lib/player-registry.ts");
+  const contracts=read("../contracten-ui.js");
+  const css=read("../contracten.css");
+  assert.match(migration,/ADD COLUMN IF NOT EXISTS arrival_deal JSONB/);
+  assert.match(migration,/Barcelona behoudt volgens de berichtgeving 50%/);
+  assert.match(migration,/"status"\s*:\s*"partly_reported"/);
+  assert.match(registry,/arrivalDeal:mapArrivalDeal\(row\.arrival_deal\)/);
+  assert.match(contracts,/Herkomst & transferdeal/);
+  assert.match(contracts,/Deels gemeld/);
+  assert.match(contracts,/const dealPanel=loan\?loanDealPanel/);
+  assert.match(css,/contract-card--incoming::before/);
+});
+
+test("registry behoudt Ouazane en valt terug als optionele kolommen ontbreken",()=>{
+  const guard=read("../db/migrations/030_protect_always_retained_players.sql");
+  const registry=read("../lib/player-registry.ts");
+  assert.match(guard,/OLD\.id = 'ouazane'/);
+  assert.match(guard,/BEFORE DELETE ON ajax_players/);
+  assert.match(registry,/ALWAYS_RETAINED_PLAYER_IDS = \["ouazane"\]/);
+  assert.match(registry,/code!=="42703"/);
+  assert.match(registry,/const fallbackQuery/);
+  assert.match(registry,/console\.warn\("Player registry optional schema missing; using fallback query"/);
+  assert.match(registry,/return \(await query\(\)\)\.map\(mapPlayer\)/);
+  assert.match(registry,/impact:"\/api\/players blijft beschikbaar/);
+});
+
 test("spelersendpoint blijft onderdeel van de bestaande MOTM-serverless functie",()=>{
   const config=JSON.parse(read("../vercel.json"));
   const route=config.rewrites.find((rewrite:any)=>rewrite.source==="/api/players");
@@ -70,6 +98,7 @@ test("publieke spelersendpoint levert alleen actieve spelers en beperkte CORS",a
   const payload=await response.json();
   assert.equal(response.status,200);
   assert.equal(response.headers.get("Access-Control-Allow-Origin"),"https://opstelling.ajaxpro.fans");
+  assert.equal(response.headers.get("Vary"),"Origin");
   assert.equal(payload.players.length,27);
   assert.equal(payload.players.some((player:any)=>player.id==="amrabat"),true);
   assert.equal(payload.players.some((player:any)=>player.id==="tsygankov"),true);
@@ -86,4 +115,5 @@ test("publieke spelersendpoint levert alleen actieve spelers en beperkte CORS",a
   assert.equal(payload.players.some((player:any)=>player.id==="carrizo"),false);
   const denied=await GET(new Request("https://ajaxpro.fans/api/motm-public?action=players",{headers:{Origin:"https://example.com"}}));
   assert.equal(denied.headers.has("Access-Control-Allow-Origin"),false);
+  assert.equal(denied.headers.get("Vary"),"Origin");
 });

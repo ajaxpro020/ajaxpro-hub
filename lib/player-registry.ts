@@ -1,6 +1,9 @@
 import { db } from "./motm-db";
 import { players as bootstrapPlayers } from "../data/players";
 
+/** Productregel: deze registry-entry mag nooit door een externe selectielijst verdwijnen. */
+export const ALWAYS_RETAINED_PLAYER_IDS = ["ouazane"] as const;
+
 export type PlayerRegistryRow = {
   id: string;
   name: string;
@@ -15,6 +18,7 @@ export type PlayerRegistryRow = {
   loanEnd: string | null;
   loanNote: string | null;
   loanDeal: LoanDeal | null;
+  arrivalDeal: ArrivalDeal | null;
   updatedAt: string;
 };
 
@@ -26,6 +30,17 @@ export type LoanDealSource = {
 export type LoanDeal = {
   status: "confirmed" | "reported";
   updatedAt: string;
+  terms: string[];
+  note: string | null;
+  sources: LoanDealSource[];
+};
+
+export type ArrivalDeal = {
+  status: "confirmed" | "partly_reported";
+  updatedAt: string;
+  fromClub: string;
+  transferType: string;
+  fee: string;
   terms: string[];
   note: string | null;
   sources: LoanDealSource[];
@@ -53,6 +68,23 @@ const mapLoanDeal=(value:unknown):LoanDeal|null=>{
   return {status,updatedAt:mapDate(deal.updatedAt)??"",terms,note:typeof deal.note==="string"?deal.note:null,sources};
 };
 
+const mapArrivalDeal=(value:unknown):ArrivalDeal|null=>{
+  if(!value||typeof value!=="object")return null;
+  const deal=value as Record<string,unknown>;
+  const status=deal.status==="confirmed"||deal.status==="partly_reported"?deal.status:null;
+  const fromClub=typeof deal.fromClub==="string"?deal.fromClub.trim():"";
+  const transferType=typeof deal.transferType==="string"?deal.transferType.trim():"";
+  const fee=typeof deal.fee==="string"?deal.fee.trim():"";
+  const terms=Array.isArray(deal.terms)?deal.terms.filter((term):term is string=>typeof term==="string"&&Boolean(term.trim())):[];
+  const sources=Array.isArray(deal.sources)?deal.sources.flatMap((source)=>{
+    if(!source||typeof source!=="object")return [];
+    const item=source as Record<string,unknown>;
+    return typeof item.label==="string"&&typeof item.url==="string"&&item.url.startsWith("https://")?[{label:item.label,url:item.url}]:[];
+  }):[];
+  if(!status||!fromClub||!transferType||!fee||!sources.length)return null;
+  return {status,updatedAt:mapDate(deal.updatedAt)??"",fromClub,transferType,fee,terms,note:typeof deal.note==="string"?deal.note:null,sources};
+};
+
 const mapPlayer=(row:any):PlayerRegistryRow=>({
   id:String(row.id),
   name:String(row.name),
@@ -67,19 +99,32 @@ const mapPlayer=(row:any):PlayerRegistryRow=>({
   loanEnd:mapDate(row.loan_end),
   loanNote:row.loan_note?String(row.loan_note):null,
   loanDeal:mapLoanDeal(row.loan_deal),
+  arrivalDeal:mapArrivalDeal(row.arrival_deal),
   updatedAt:new Date(row.updated_at).toISOString(),
 });
 
 export const loadPlayers=async({includeInactive=false}:{includeInactive?:boolean}={})=>{
   if(!process.env.DATABASE_URL){
     return bootstrapPlayers.filter(player=>includeInactive||player.active).map(player=>({
-      ...player,contractEnd:null,contractPosition:null,contractNote:null,loanClub:null,loanEnd:null,loanNote:null,loanDeal:null,updatedAt:new Date(0).toISOString(),
+      ...player,contractEnd:null,contractPosition:null,contractNote:null,loanClub:null,loanEnd:null,loanNote:null,loanDeal:null,arrivalDeal:null,updatedAt:new Date(0).toISOString(),
     }));
   }
-  const rows=await db()`SELECT id,name,shirt_number,position,image_url,active,contract_end,contract_position,contract_note,loan_club,loan_end,loan_note,loan_deal,updated_at
+  const query=()=>db()`SELECT id,name,shirt_number,position,image_url,active,contract_end,contract_position,contract_note,loan_club,loan_end,loan_note,loan_deal,arrival_deal,updated_at
     FROM ajax_players WHERE (${includeInactive} OR active=true)
     ORDER BY active DESC,shirt_number NULLS LAST,name`;
-  return rows.map(mapPlayer);
+  const fallbackQuery=()=>db()`SELECT id,name,shirt_number,position,image_url,active,contract_end,contract_position,contract_note,loan_club,loan_end,loan_note,updated_at
+    FROM ajax_players WHERE (${includeInactive} OR active=true)
+    ORDER BY active DESC,shirt_number NULLS LAST,name`;
+  try{
+    return (await query()).map(mapPlayer);
+  }catch(error){
+    const code=error&&typeof error==="object"&&"code" in error?(error as {code?:unknown}).code:null;
+    if(code!=="42703")throw error;
+    const message=error instanceof Error?error.message:"";
+    const missingColumn=message.match(/column [\"']?([^\"']+)[\"']? does not exist/i)?.[1]??"loan_deal or arrival_deal";
+    console.warn("Player registry optional schema missing; using fallback query",{missingColumn,impact:"/api/players blijft beschikbaar, maar optionele huur- en transferdata kan ontbreken."});
+    return (await fallbackQuery()).map((row)=>mapPlayer({...row,loan_deal:null,arrival_deal:null}));
+  }
 };
 
 export const toToolPlayer=(player:PlayerRegistryRow)=>({

@@ -29,6 +29,20 @@ const loanDealPanel=(deal)=>{
   disclosure.append(summary,body);return disclosure;
 };
 
+const arrivalDealPanel=(deal)=>{
+  if(!deal||!deal.fromClub||!deal.transferType||!deal.fee||!Array.isArray(deal.sources)||!deal.sources.length)return null;
+  const reported=deal.status==="partly_reported",disclosure=document.createElement("details");disclosure.className="loan-deal arrival-deal";
+  const summary=document.createElement("summary"),title=document.createElement("span");title.className="loan-deal__title";title.append(text("strong","Herkomst & transferdeal"),text("small",`${deal.fromClub} · ${deal.transferType}`));
+  const summaryMeta=document.createElement("span");summaryMeta.className="loan-deal__summary-meta";summaryMeta.append(text("span",reported?"Deels gemeld":"Bron bevestigd",`loan-deal__status loan-deal__status--${reported?"reported":"confirmed"}`),text("span","","loan-deal__chevron"));summaryMeta.lastElementChild.setAttribute("aria-hidden","true");summary.append(title,summaryMeta);
+  const body=document.createElement("div");body.className="loan-deal__body";
+  const overview=document.createElement("dl");overview.className="arrival-deal__overview";
+  [["Overgekomen van",deal.fromClub],["Overgang",deal.transferType],["Bedrag",deal.fee]].forEach(([label,value])=>{const item=document.createElement("div");item.append(text("dt",label),text("dd",value));overview.append(item)});body.append(overview);
+  if(Array.isArray(deal.terms)&&deal.terms.length){body.append(text("h4","Bekende constructie"));const terms=document.createElement("ul");terms.className="loan-deal__terms";deal.terms.forEach(term=>terms.append(text("li",term)));body.append(terms)}
+  if(deal.note){const caveat=document.createElement("div");caveat.className="loan-deal__caveat";caveat.append(text("strong",reported?"Wat is onzeker?":"Wat is niet openbaar?"),text("p",deal.note));body.append(caveat)}
+  const sources=document.createElement("div");sources.className="loan-deal__sources";sources.append(text("span",deal.sources.length===1?"Bron":"Bronnen"));deal.sources.forEach(source=>{if(!source?.url?.startsWith("https://"))return;const link=text("a",source.label);link.href=source.url;link.target="_blank";link.rel="noreferrer";sources.append(link)});body.append(sources);
+  disclosure.append(summary,body);return disclosure;
+};
+
 const contractCard=(player,loan=false)=>{
   const incoming=Boolean(!loan&&player.contractNote?.toLowerCase().startsWith("gehuurd van "));
   const article=document.createElement("article");article.className=`contract-card${loan?" contract-card--loan":incoming?" contract-card--incoming":""}`;
@@ -42,7 +56,8 @@ const contractCard=(player,loan=false)=>{
     facts.append(fact("Contract tot",player.contractEnd?formatDate(player.contractEnd):"Nog niet bekend"));
   }
   article.append(facts);
-  const dealPanel=loanDealPanel(player.loanDeal);if(dealPanel)article.append(dealPanel);
+  const arrivalPanel=!loan?arrivalDealPanel(player.arrivalDeal):null;if(arrivalPanel)article.append(arrivalPanel);
+  const dealPanel=loan?loanDealPanel(player.loanDeal):null;if(dealPanel)article.append(dealPanel);
   return article;
 };
 
