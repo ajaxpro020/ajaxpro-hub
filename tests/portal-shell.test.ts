@@ -60,3 +60,9 @@ test("een tool kan blob-afbeeldingen toestaan zonder MOTM-pagina's te verruimen"
   assert.match(socials.headers.get("content-security-policy")??"",/img-src 'self' https:\/\/cdn\.discordapp\.com blob:/);
   assert.doesNotMatch(motm.headers.get("content-security-policy")??"",/img-src[^;]*blob:/);
 });
+
+test("de generieke loginlink laat Club eerst een bestaande sessie controleren",async()=>{
+  const html=await page("Club","<main>Inhoud</main>").text();
+  assert.match(html,/class="profile-login" href="https:\/\/ajaxpro\.fans\/club">Inloggen<\/a>/);
+  assert.doesNotMatch(html,/class="profile-login" href="\/api\/auth\/discord-login"/);
+});
